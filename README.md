@@ -95,9 +95,9 @@ aichat_api_list（api列表）格式：
 aichat_completion_config（生成配置）格式：
 ```json
 {
-    "max_token": 最大输出token数,
-    "temperature": 温度，越小越精确，越大越随机,想要了解的自己去搜
-    "top_p": top_p,想要了解的自己去搜
+    "max_token": 1024,
+    "temperature": 0.7
+    "top_p": 0.9
 }
 ```
 
@@ -150,15 +150,15 @@ aichat_api_list = '
 aichat_available_memes = '
 [
 {
-    "url": "D:\\bots\imgs\1.png",
+    "url": "D:\\bots\\imgs\\1.png",
     "desc": "很抱歉伤害到你"
 },
 {
-    "url": "D:\\bots\imgs\2.png",
+    "url": "D:\\bots\\imgs\\2.png",
     "desc": "哭"
 },
 {
-    "url": "D:\\bots\imgs\3.png",
+    "url": "D:\\bots\\imgs\\3.png",
     "desc": "啊哈哈...（感到尴尬）"
 }
 ]
