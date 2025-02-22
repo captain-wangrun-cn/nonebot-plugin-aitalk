@@ -1,0 +1,20 @@
+[tool.poetry]
+name = "nonebot_plugin_aitalk"
+version = "1.0.0"
+description = "简单好用的AI聊天插件，支持多API，支持发送表情包，艾特，戳一戳等"
+authors = ["WR <wangrun114514@foxmail.com>"]
+license = "GPL-3.0"
+readme = "README.md"
+homepage = "https://github.com/captain-wangrun-cn/nonebot-plugin-aitalk"
+repository = "https://github.com/captain-wangrun-cn/nonebot-plugin-aitalk"
+
+[tool.poetry.dependencies]
+python = "^3.9"
+nonebot2 = "^2.2.0"
+nonebot-adapter-onebot = "^2.0.0"
+nonebot_plugin_localstore = "^0.7.3"
+openai = "^1.63.2"
+
+[build-system]
+requires = ["poetry-core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"
