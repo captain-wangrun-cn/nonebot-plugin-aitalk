@@ -1,5 +1,6 @@
 from nonebot import on_message, on_command, get_driver, require, logger
 from nonebot.rule import Rule
+from nonebot.plugin import PluginMetadata
 from nonebot.permission import SUPERUSER
 from nonebot.adapters import Message
 from nonebot.params import CommandArg
@@ -20,6 +21,16 @@ from .data import *
 from .cd import *
 
 require("nonebot_plugin_localstore")
+
+__plugin_meta__ = PluginMetadata(
+    name="简易AI聊天",
+    description="简单好用的AI聊天插件，支持多API，支持发送表情包，艾特，戳一戳等",
+    usage="@机器人发起聊天",
+    type="application",
+    homepage="https://github.com/captain-wangrun-cn/nonebot-plugin-aitalk",
+    config=Config,
+    supported_adapters={"~onebot.v11"},
+)
 
 driver = get_driver()
 user_config = {}
