@@ -211,6 +211,10 @@ handler = on_message(
 async def _(event: GroupMessageEvent, bot: Bot):
     uid = str(event.user_id)
 
+    if uid == "2854196310":
+        # 排除Q群管家
+        return
+
     if command_start:
         if not event.get_plaintext().startswith(command_start):
             return
