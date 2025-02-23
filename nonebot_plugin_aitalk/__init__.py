@@ -71,7 +71,7 @@ def format_reply(reply: (str | dict)) -> list:
             for meme in memes:
                 if meme["url"] == msg.get("url"):
                     url = meme["url"]
-                    if not url.startswith("http://") or not url.startswith("https://"):
+                    if not url.startswith("http://") and not url.startswith("https://"):
                         url = url.replace("/","\\\\")
                     return MessageSegment.image(url)
             return MessageSegment.text("[未知表情包 URL]")
