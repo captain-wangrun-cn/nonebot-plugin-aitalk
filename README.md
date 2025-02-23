@@ -64,7 +64,7 @@ _✨ 简单好用的AI聊天插件 ✨_
 | aichat_completion_config | list | 否 | [ ] | 生成配置，格式请往下看 |
 | aichat_default_prompt | str | 否 | "你的回答应该尽量简洁、幽默、可以使用一些语气词、颜文字。你应该拒绝回答任何政治相关的问题。" | 默认提示词 |
 | aichat_default_prompt_file | str | 否 | "" | 默认提示词文件路径，与提示词二选一，优先使用文件。请注意将windows系统路径中的\替换成\\ |
-| aichat_available_memes | list | 否 | [ ] | AI可以发送的表情包，格式请往下看 |
+| aichat_available_memes | list | 是 | [ ] | AI可以发送的表情包，格式请往下看 |
 | aichat_reply_when_meme | bool | 否 | true | 当只有表情包时，是否回复消息 |
 | aichat_max_split_length | int | 否 | 5 | 最大分割长度，将会在prompt中告诉ai，回复的消息数量不要大于这个值，可能不起作用 |
 | aichat_max_context_length | int | 否 | 20 | 最长上下文消息数量，超过这个数量时，将会逐个抛弃最早的一条消息。这个数值包括设定消息 |
