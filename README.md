@@ -186,6 +186,8 @@ aichat_default_prompt_file = "D:\\prompt\\日富美.txt"
 [nonebot-plugin-llmchat](https://github.com/FuQuan233/nonebot-plugin-llmchat) 参考了部分代码以及prompt
 
 ## 📃 更新日志
+### 1.0.23（2025.02.23）
+- 🧋修复依赖问题
 ### 1.0.2（2025.02.23）
 - 🧋修复表情包本地路径问题
 ### 1.0.1（2025.02.22）
