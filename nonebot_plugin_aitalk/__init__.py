@@ -70,6 +70,9 @@ def format_reply(reply: (str | dict)) -> list:
             # 表情包
             for meme in memes:
                 if meme["url"] == msg.get("url"):
+                    url = meme["url"]
+                    if not url.startswith("http://") or not meme["url"].startswith("https://"):
+                        url = url.replace("/","\\")
                     return MessageSegment.image(meme["url"])
             return MessageSegment.text("[未知表情包 URL]")
         else:
@@ -236,7 +239,7 @@ async def _(event: GroupMessageEvent, bot: Bot):
 
         character_prompt = default_prompt
         if default_prompt_file:
-            with open(default_prompt_file, "r", encoding="utf-8") as f:
+            with open(default_prompt_file.replace("\\\\","\\"), "r", encoding="utf-8") as f:
                 character_prompt = f.read()
 
         # AI设定
