@@ -14,13 +14,13 @@ from nonebot.adapters.onebot.v11 import (
     Bot,
 )
 
+require("nonebot_plugin_localstore")
+
 import json
 from .config import *
 from .api import gen
 from .data import *
 from .cd import *
-
-require("nonebot_plugin_localstore")
 
 __plugin_meta__ = PluginMetadata(
     name="简易AI聊天",
