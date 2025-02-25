@@ -4,12 +4,12 @@ import json
 from .config import default_available
 
 def get_config_file() -> Path:
-    file = store.get_config_file("nonebot-plugin-aitalk", "config.json")
+    file = store.get_plugin_config_file("config.json")
     if not file.exists(): file.write_text("{}")
     return file
 
 def get_available_config_file() -> Path:
-    file = store.get_config_file("nonebot-plugin-aitalk", "available.json")
+    file = store.get_plugin_config_file("available.json")
     if not file.exists(): file.write_text("{}")
     return file
 

@@ -106,7 +106,7 @@ aichat_available_memes（AI可以发送的表情包）格式：
 ```json
 [
 {
-    "url": "图片地址，支持链接或本地路径。注意！如果是windows系统的本地路径，请将路径中的\换成/",
+    "url": "图片地址，支持链接或本地路径。⚠️⚠️注意！如果是windows系统的本地路径，请将路径中的\换成/，可以看下面的配置示例⚠️⚠️",
     "desc": "图片描述，告诉AI这张表情包是什么内容，用于什么场景等等"
 },
 {
@@ -186,6 +186,8 @@ aichat_default_prompt_file = "D:\\prompt\\日富美.txt"
 [nonebot-plugin-llmchat](https://github.com/FuQuan233/nonebot-plugin-llmchat) 参考了部分代码以及prompt
 
 ## 📃 更新日志
+### 1.0.7（2025.02.25）
+- ❤️更改data.py
 ### 1.0.6（2025.02.23）
 - 😡排除Q群管家
 ### 1.0.5（2025.02.23）
