@@ -7,9 +7,9 @@ async def gen(messages: dict, model_name: str, api_key: str, api_url: str) -> st
     completion = await client.chat.completions.create(
         model=model_name,
         messages=messages,
-        max_tokens=plugin_config.aichat_completion_config.max_token,
-        temperature=plugin_config.aichat_completion_config.temperature,
-        top_p=plugin_config.aichat_completion_config.top_p,
+        max_tokens=plugin_config.aitalk_completion_config.max_token,
+        temperature=plugin_config.aitalk_completion_config.temperature,
+        top_p=plugin_config.aitalk_completion_config.top_p,
     )
 
     return completion.choices[0].message.content

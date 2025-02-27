@@ -6,9 +6,11 @@ from nonebot.adapters import Message
 from nonebot.params import CommandArg
 from nonebot.adapters.onebot.v11 import (
     GroupMessageEvent, 
+    PrivateMessageEvent,
     GROUP, 
     GROUP_ADMIN, 
     GROUP_OWNER, 
+    PRIVATE_FRIEND,
     MessageSegment, 
     Message, 
     Bot,
@@ -117,7 +119,12 @@ def format_reply(reply: (str | dict)) -> list:
 
 
 # 封装重复的代码逻辑，用于发送格式化后的回复
-async def send_formatted_reply(bot: Bot, event: GroupMessageEvent, formatted_reply: list, reply_msg: bool):
+async def send_formatted_reply(bot: Bot, event: GroupMessageEvent|PrivateMessageEvent, formatted_reply: list, reply_msg: bool):
+    if isinstance(event, PrivateMessageEvent):
+        try:
+            bot.set_input_status(event_type=1)
+        except Exception as ex:
+            logger.error(str(ex))
     for msg in formatted_reply:
         if isinstance(msg, MessageSegment):
             if msg.type == "image":
@@ -133,16 +140,19 @@ async def send_formatted_reply(bot: Bot, event: GroupMessageEvent, formatted_rep
             await handler.send(result_msg, reply_message=reply_msg)
         elif isinstance(msg, PokeMessage):
             # 戳一戳
-            await bot.group_poke(group_id=msg.gid, user_id=msg.uid)
+            if isinstance(event,GroupMessageEvent):
+                await bot.group_poke(group_id=msg.gid, user_id=msg.uid)
+            else:
+                await bot.friend_poke(user_id=msg.uid)
 
 model_choose = on_command(
     cmd="选择模型",
     aliases={"模型选择"},
-    permission=GROUP,
+    permission=GROUP|PRIVATE_FRIEND,
     block=True
 )
 @model_choose.handle()
-async def _(event: GroupMessageEvent, args: Message = CommandArg()):
+async def _(event: GroupMessageEvent|PrivateMessageEvent, args: Message = CommandArg()):
     if model := args.extract_plain_text():
         uid = str(event.user_id)
         model_list = [i.name for i in api_list]
@@ -164,11 +174,11 @@ async def _(event: GroupMessageEvent, args: Message = CommandArg()):
 clear_history = on_command(
     cmd="清空聊天记录",
     aliases={"清空对话"},
-    permission=GROUP,
+    permission=GROUP|PRIVATE_FRIEND,
     block=True
 )
 @clear_history.handle()
-async def _(event: GroupMessageEvent):
+async def _(event: GroupMessageEvent|PrivateMessageEvent):
     user_config[str(event.user_id)]["messages"] = []
     await clear_history.finish("清空完成～")
 
@@ -176,21 +186,21 @@ async def _(event: GroupMessageEvent):
 switch = on_command(
     cmd="ai对话",
     aliases={"切换ai对话"},
-    permission=SUPERUSER|GROUP_ADMIN|GROUP_OWNER,
+    permission=SUPERUSER|GROUP_ADMIN|GROUP_OWNER|PRIVATE_FRIEND,
     block=True
 )
 @switch.handle()
-async def _(event: GroupMessageEvent, args: Message = CommandArg()):
+async def _(event: GroupMessageEvent|PrivateMessageEvent, args: Message = CommandArg()):
     if arg := args.extract_plain_text():
-        gid = event.group_id
+        id = event.user_id if isinstance(event,PrivateMessageEvent) else event.group_id
         if arg == "开启":
-            enable(gid)
+            enable_private(id) if isinstance(event,PrivateMessageEvent) else enable(id)
             await switch.finish("ai对话已经开启~")
         elif arg == "关闭":
-            disable(gid)
+            disable_private(id) if isinstance(event,PrivateMessagEvent) else disable(id)
             await switch.finish("ai对话已经禁用~")
         else:
-            await switch.finish("请使用 /ai对话 <开启/关闭> 来开启或关闭本群的ai对话~")
+            await switch.finish("请使用 /ai对话 <开启/关闭> 来开启或关闭ai对话~")
     else:
        await switch.finish("请使用 /ai对话 <开启/关闭> 来开启或关闭本群的ai对话~")
 
@@ -200,24 +210,33 @@ handler = on_message(
     rule=Rule(
         lambda 
         event: isinstance(event, GroupMessageEvent) 
+        and event.get_plaintext().startswith(command_start)
         and event.to_me 
         and is_available(event.group_id)
     ),
     permission=GROUP,
-    priority=10,
+    priority=50,
     block=False,
 )
+# 处理私聊消息
+handler_private = on_message(
+    rule=Rule(
+        lambda
+        event: isinstance(event, PrivateMessageEvent)
+        and is_private_available(event.user_id)
+    ),
+    permission=PRIVATE_FRIEND,
+    priority=50,
+    block=False
+)
 @handler.handle()
-async def _(event: GroupMessageEvent, bot: Bot):
+@handler_private.handle()
+async def _(event: GroupMessageEvent|PrivateMessageEvent, bot: Bot):
     uid = str(event.user_id)
 
     if uid == "2854196310":
         # 排除Q群管家
         return
-
-    if command_start:
-        if not event.get_plaintext().startswith(command_start):
-            return
 
     if not check_cd(uid):
         await handler.finish("你的操作太频繁了哦！请稍后再试！")
@@ -318,7 +337,7 @@ async def _(event: GroupMessageEvent, bot: Bot):
     - 用户QQ号: {uid}
     - 消息时间：{event.time}
     - 消息id: {event.message_id}
-    - 群号: {event.group_id}
+    - 群号: {event.group_id if isinstance(event,GroupMessageEvent) else "这是一条私聊消息"}
     - 用户说：{event.get_plaintext()}
     """
     if len(user_config[uid]["messages"]) >= max_context_length:
