@@ -13,8 +13,10 @@ def get_available_config_file() -> Path:
     if not file.exists(): file.write_text("{}")
     return file
 
-def get_available_private_config_file(uid: int):
+def get_available_private_config_file():
     file = store.get_plugin_config_file("available_private.json")
+    if not file.exists(): file.write_text("{}")
+    return file
 
 def write_data(key, value):
     file = get_config_file()
@@ -56,19 +58,19 @@ def is_available(gid: int):
     return data[str(gid)]
 
 def enable_private(uid: int):
-    file = get_available_config_file()
+    file = get_available_private_config_file()
     data = json.loads(file.read_text())
     data[str(uid)] = True
     file.write_text(json.dumps(data))
 
 def disable_private(uid: int):
-    file = get_available_config_file()
+    file = get_available_private_config_file()
     data = json.loads(file.read_text())
     data[str(uid)] = False
     file.write_text(json.dumps(data))
 
 def is_private_available(uid: int):
-    file = get_available_config_file()
+    file = get_available_private_config_file()
     data = json.loads(file.read_text())
     if str(uid) not in data:
         return default_available_private

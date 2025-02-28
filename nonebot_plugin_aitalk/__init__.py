@@ -120,11 +120,6 @@ def format_reply(reply: (str | dict)) -> list:
 
 # 封装重复的代码逻辑，用于发送格式化后的回复
 async def send_formatted_reply(bot: Bot, event: GroupMessageEvent|PrivateMessageEvent, formatted_reply: list, reply_msg: bool):
-    if isinstance(event, PrivateMessageEvent):
-        try:
-            bot.set_input_status(event_type=1)
-        except Exception as ex:
-            logger.error(str(ex))
     for msg in formatted_reply:
         if isinstance(msg, MessageSegment):
             if msg.type == "image":
@@ -245,6 +240,12 @@ async def _(event: GroupMessageEvent|PrivateMessageEvent, bot: Bot):
         user_config[uid] = {}
         await handler.finish("请先使用 /选择模型 来选择模型哦！", at_sender=True)
 
+    if isinstance(event, PrivateMessageEvent):
+        try:
+            bot.set_input_status(event_type=1)
+        except Exception as ex:
+            logger.error(str(ex))
+  
     api_key = ""
     api_url = ""
     model = ""
@@ -281,7 +282,7 @@ async def _(event: GroupMessageEvent|PrivateMessageEvent, bot: Bot):
 
         字典中的messages字段代表你的回复，你还可以根据情景向字典里添加其他参数
         可用的参数有:
-            reply - 布尔值 - 是否回复用户的消息，如回复，则在msg_id字段内填入消息id
+            reply - 布尔值 - 是否回复用户的消息，如回复，则在msg_id字段内填入消息id。注意，私聊消息请不要回复！
             messages字段是一个列表，你向里面可以添加字典或列表，如果是列表，则代表列表中的所有内容为一句话；如果为字典，则是一句话。
             请用一个字典代表一句话。
             其中，type字段代表类型，可用的值有:
