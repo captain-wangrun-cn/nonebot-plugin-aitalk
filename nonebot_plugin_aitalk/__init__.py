@@ -17,6 +17,7 @@ from nonebot.adapters.onebot.v11 import (
 )
 
 require("nonebot_plugin_localstore")
+require("nonebot_plugin_alconna")
 
 import json
 from .config import *
@@ -242,7 +243,7 @@ async def _(event: GroupMessageEvent|PrivateMessageEvent, bot: Bot):
 
     if isinstance(event, PrivateMessageEvent):
         try:
-            bot.set_input_status(event_type=1)
+            await bot.set_input_status(event_type=1)
         except Exception as ex:
             logger.error(str(ex))
   
@@ -322,7 +323,6 @@ async def _(event: GroupMessageEvent|PrivateMessageEvent, bot: Bot):
                     "type": "poke",
                     "uid": 11111,
                     "gid": 1111111
-
                 }}
             ],
             "reply": true,
