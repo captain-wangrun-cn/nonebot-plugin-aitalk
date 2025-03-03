@@ -19,11 +19,12 @@ from nonebot.adapters.onebot.v11 import (
 require("nonebot_plugin_localstore")
 require("nonebot_plugin_alconna")
 
-import json
+import json,time
 from .config import *
 from .api import gen
 from .data import *
 from .cd import *
+from .utils import *
 
 __plugin_meta__ = PluginMetadata(
     name="简易AI聊天",
@@ -36,19 +37,10 @@ __plugin_meta__ = PluginMetadata(
 )
 
 driver = get_driver()
-user_config = {}
+user_config = {"private":{},"group":{}}
 memes = [dict(i) for i in available_memes]
-
-class PokeMessage:
-    gid = 0
-    uid = 0
-
-def need_reply_msg(reply: str):
-    # 判断是否需要回复原消息
-    msg = json.loads(reply.replace("```json", "").replace("```", ""))
-    if msg["reply"]:
-        return True, msg["msg_id"]
-    return False, None
+model_list = [i.name for i in api_list]
+sequence = {"private":[],"group":[]}
 
 def format_reply(reply: (str | dict)) -> list:
     # 格式化回复消息
@@ -119,44 +111,22 @@ def format_reply(reply: (str | dict)) -> list:
     return result
 
 
-# 封装重复的代码逻辑，用于发送格式化后的回复
-async def send_formatted_reply(bot: Bot, event: GroupMessageEvent|PrivateMessageEvent, formatted_reply: list, reply_msg: bool):
-    for msg in formatted_reply:
-        if isinstance(msg, MessageSegment):
-            if msg.type == "image":
-                # 是否需要单独发送图片
-                await handler.send(msg, reply_message=reply_when_meme and reply_msg)
-            else:
-                await handler.send(msg, reply_message=reply_msg)
-        elif isinstance(msg, list):
-            # 将多段内容合并到一条消息
-            result_msg = Message()
-            for msg_ in msg:
-                result_msg += msg_
-            await handler.send(result_msg, reply_message=reply_msg)
-        elif isinstance(msg, PokeMessage):
-            # 戳一戳
-            if isinstance(event,GroupMessageEvent):
-                await bot.group_poke(group_id=msg.gid, user_id=msg.uid)
-            else:
-                await bot.friend_poke(user_id=msg.uid)
-
 model_choose = on_command(
     cmd="选择模型",
     aliases={"模型选择"},
-    permission=GROUP|PRIVATE_FRIEND,
+    permission=GROUP_ADMIN|GROUP_OWNER|SUPERUSER|PRIVATE_FRIEND,
     block=True
 )
 @model_choose.handle()
 async def _(event: GroupMessageEvent|PrivateMessageEvent, args: Message = CommandArg()):
     if model := args.extract_plain_text():
-        uid = str(event.user_id)
-        model_list = [i.name for i in api_list]
+        id = str(event.user_id) if isinstance(event,PrivateMessageEvent) else str(event.group_id)
+        chat_type = "private" if isinstance(event,PrivateMessageEvent) else "group"
         if model not in model_list:
             await handler.finish(f"你选择的模型 {model} 不存在哦！请使用 /选择模型 选择正确的模型！", at_sender=True)
-        if uid not in user_config:
-            user_config[uid] = {}
-        user_config[uid]["model"] = model
+        if id not in user_config[chat_type]:
+            user_config[chat_type][id] = {}
+        user_config[chat_type][id]["model"] = model
         await handler.finish(f"模型已经切换为 {model} 了哦~")
     else:
         msg = "可以使用的模型有这些哦："
@@ -170,12 +140,14 @@ async def _(event: GroupMessageEvent|PrivateMessageEvent, args: Message = Comman
 clear_history = on_command(
     cmd="清空聊天记录",
     aliases={"清空对话"},
-    permission=GROUP|PRIVATE_FRIEND,
+    permission=SUPERUSER|GROUP_OWNER|GROUP_ADMIN|PRIVATE_FRIEND,
     block=True
 )
 @clear_history.handle()
 async def _(event: GroupMessageEvent|PrivateMessageEvent):
-    user_config[str(event.user_id)]["messages"] = []
+    try:
+        user_config["private" if isinstance(event,PrivateMessageEvent) else "group"][str(event.user_id) if isinstance(event,PrivateMessageEvent) else str(event.group_id)]["messages"] = []
+    except KeyError: pass
     await clear_history.finish("清空完成～")
 
 # 开关AI对话
@@ -228,22 +200,29 @@ handler_private = on_message(
 @handler.handle()
 @handler_private.handle()
 async def _(event: GroupMessageEvent|PrivateMessageEvent, bot: Bot):
-    uid = str(event.user_id)
+    id = str(event.user_id) if isinstance(event,PrivateMessageEvent) else str(event.group_id)
+    chat_type = "private" if isinstance(event,PrivateMessageEvent) else "group"
 
-    if uid == "2854196310":
+    if isinstance(event, GroupMessageEvent) and id == "2854196310":
         # 排除Q群管家
         return
 
-    if not check_cd(uid):
+    if not check_cd(id):
         await handler.finish("你的操作太频繁了哦！请稍后再试！")
 
-    if uid not in user_config or "model" not in user_config[uid]:
-        user_config[uid] = {}
+    if id not in user_config[chat_type] or "model" not in user_config[chat_type][id]:
+        user_config[chat_type][id] = {}
         await handler.finish("请先使用 /选择模型 来选择模型哦！", at_sender=True)
+        
+    if id in sequence[chat_type]:
+        # 有正在处理的消息
+        await handler.finish("不要着急哦！你还有一条消息正在处理...", at_sender=True)
+
+    images = []
 
     if isinstance(event, PrivateMessageEvent):
         try:
-            await bot.set_input_status(event_type=1)
+            await bot.set_input_status(event_type=1,user_id=event.self_id)
         except Exception as ex:
             logger.error(str(ex))
   
@@ -251,13 +230,16 @@ async def _(event: GroupMessageEvent|PrivateMessageEvent, bot: Bot):
     api_url = ""
     model = ""
     for i in api_list:
-        if i.name == user_config[uid]["model"]:
+        if i.name == user_config[chat_type][id]["model"]:
             api_key = i.api_key
             api_url = i.api_url
             model = i.model_name
+            if i.image_input:
+                # 支持图片输入
+                images = await get_images(event)
             break
     
-    if "messages" not in user_config[uid] or not user_config[uid]["messages"]:
+    if "messages" not in user_config[chat_type][id] or not user_config[chat_type][id]["messages"]:
         memes_msg = f"url - 描述"   # 表情包列表
         for meme in memes:
             memes_msg += f"\n            {meme['url']} - {meme['desc']}"
@@ -330,36 +312,45 @@ async def _(event: GroupMessageEvent|PrivateMessageEvent, bot: Bot):
         }}
 
         """
-        user_config[uid]["messages"] = [{"role": "system", "content": system_prompt}]
+        user_config[chat_type][id]["messages"] = [{"role": "system", "content": system_prompt}]
 
     # 用户信息
     user_prompt = f"""
     - 用户昵称：{event.sender.nickname}
-    - 用户QQ号: {uid}
-    - 消息时间：{event.time}
+    - 用户QQ号: {event.user_id}
+    - 消息时间：{time.strftime("%Y-%m-%d %H:%M:%S",time.localtime(event.time))}
     - 消息id: {event.message_id}
     - 群号: {event.group_id if isinstance(event,GroupMessageEvent) else "这是一条私聊消息"}
     - 用户说：{event.get_plaintext()}
     """
-    if len(user_config[uid]["messages"]) >= max_context_length:
+
+    if len(user_config[chat_type][id]["messages"]) >= max_context_length:
         # 超过上下文数量限制，删除最旧的消息（保留设定）
-        user_config[uid]["messages"] = [user_config[uid]["messages"][0]] + user_config[uid]["messages"][2:]
-    user_config[uid]["messages"].append({"role": "user", "content": user_prompt})
+        user_config[chat_type][id]["messages"] = [user_config[chat_type][id]["messages"][0]] + user_config[chat_type][id]["messages"][2:]
+    user_config[chat_type][id]["messages"].append({"role": "user", "content": [{"type": "text", "text": user_prompt}]})
+
+    if images:
+        # 传入图片
+        for image in images:
+            user_config[chat_type][id]["messages"][-1]["content"].append({"type": "image_url", "image_url": {"url": f"data:image/jpeg;base64,{image}"}})
 
     try:
-        reply = await gen(user_config[uid]["messages"], model, api_key, api_url)
+        sequence[chat_type].append(id)
+        reply = await gen(user_config[chat_type][id]["messages"], model, api_key, api_url)
         logger.debug(reply)
 
         formatted_reply = format_reply(reply)
         reply_msg = need_reply_msg(reply)
 
-        user_config[uid]["messages"].append({"role": "assistant", "content": f"{reply}"})
+        user_config[chat_type][id]["messages"].append({"role": "assistant", "content": f"{reply}"})
 
         await send_formatted_reply(bot, event, formatted_reply, reply_msg)
-        add_cd(uid)
+        add_cd(id)
+        sequence[chat_type].remove(id)
     except Exception as e:
-        user_config[uid]["messages"].pop()  # 发生错误，撤回消息
-        await handler.finish(f"很抱歉发生错误了！\n{e}", reply_message=True)
+        user_config[chat_type][id]["messages"].pop()  # 发生错误，撤回消息
+        await handler.send(f"很抱歉发生错误了！\n{e}", reply_message=True)
+        raise e
 
 
 # 定义启动时的钩子函数，用于读取用户配置
@@ -367,7 +358,9 @@ async def _(event: GroupMessageEvent|PrivateMessageEvent, bot: Bot):
 async def _():
     if save_user_config:
         global user_config
-        user_config = read_all_data()
+        data = read_all_data()
+        if data:
+            user_config = data
 
 # 定义关闭时的钩子函数，用于保存用户配置
 @driver.on_shutdown

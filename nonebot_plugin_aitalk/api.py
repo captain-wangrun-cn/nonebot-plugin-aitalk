@@ -1,7 +1,12 @@
 from openai import AsyncOpenAI
 from .config import plugin_config
 
-async def gen(messages: dict, model_name: str, api_key: str, api_url: str) -> str|None:
+async def gen(
+        messages: dict, 
+        model_name: str, 
+        api_key: str, 
+        api_url: str
+        ) -> str|None:
     client = AsyncOpenAI(base_url=api_url, api_key=api_key)
 
     completion = await client.chat.completions.create(

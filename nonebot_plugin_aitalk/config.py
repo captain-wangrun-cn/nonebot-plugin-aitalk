@@ -6,6 +6,7 @@ class ModelConfig(BaseModel):
     api_url: str = Field(..., description="API地址")
     api_key: str = Field(..., description="API Key")
     model_name: str = Field(..., description="模型名称")
+    image_input: bool = Field(False, description="是否支持输入图片（适用于多模态模型，如qwen-vl）")
 
 class CompletionConfig(BaseModel):
     max_token: int = Field(1024, description="最大输出token数")
@@ -30,6 +31,7 @@ class Config(BaseModel):
     aitalk_default_prompt_file: str = Field("", description="默认提示词文件，和默认提示词二选一，优先使用文件")
     aitalk_available_memes: list[MemeConfig] = Field(..., description="可用表情包")
     aitalk_reply_when_meme: bool = Field(False, description="当发送表情包时是否回复原消息")
+    aitalk_reply: bool = Field(True, description="是否回复原消息")
     aitalk_max_split_length: int = Field(5, description="消息最大分割长度")
     aitalk_max_context_length: int = Field(20, description="最大上下文长度")
     aitalk_save_user_config: bool = Field(True, description="是否在关闭时保存用户配置，重启后会进行读取")
@@ -44,6 +46,7 @@ default_prompt = plugin_config.aitalk_default_prompt
 default_prompt_file = plugin_config.aitalk_default_prompt_file
 available_memes = plugin_config.aitalk_available_memes
 reply_when_meme = plugin_config.aitalk_reply_when_meme
+reply_msg = plugin_config.aitalk_reply_when_meme
 max_split_length = plugin_config.aitalk_max_split_length
 max_context_length = plugin_config.aitalk_max_context_length
 save_user_config = plugin_config.aitalk_save_user_config
