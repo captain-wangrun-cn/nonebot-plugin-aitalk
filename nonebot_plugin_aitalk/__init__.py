@@ -344,11 +344,11 @@ async def _(event: GroupMessageEvent|PrivateMessageEvent, bot: Bot):
         logger.debug(reply)
 
         formatted_reply = format_reply(reply)
-        reply_msg = need_reply_msg(reply)
+        should_reply, msg_id = need_reply_msg(reply)  # 提取布尔值
 
         user_config[chat_type][id]["messages"].append({"role": "assistant", "content": f"{reply}"})
 
-        await send_formatted_reply(bot, event, formatted_reply, reply_msg)
+        await send_formatted_reply(bot, event, formatted_reply, should_reply)  # 传递布尔值
         add_cd(id)
         sequence[chat_type].remove(id)
     except Exception as e:
