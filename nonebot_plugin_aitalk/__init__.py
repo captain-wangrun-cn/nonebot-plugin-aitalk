@@ -29,7 +29,7 @@ from .utils import *
 
 __plugin_meta__ = PluginMetadata(
     name="简易AI聊天",
-    description="简单好用的AI聊天插件，支持多API，支持发送表情包，艾特，戳一戳等",
+    description="简单好用的AI聊天插件，支持多API，支持让AI理解图片，发送表情包，艾特，戳一戳等",
     usage="@机器人发起聊天",
     type="application",
     homepage="https://github.com/captain-wangrun-cn/nonebot-plugin-aitalk",
