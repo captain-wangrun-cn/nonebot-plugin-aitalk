@@ -1,3 +1,4 @@
+import os
 from nonebot import on_message, on_command, get_driver, require, logger
 from nonebot.rule import Rule
 from nonebot.plugin import PluginMetadata
@@ -66,8 +67,11 @@ def format_reply(reply: (str | dict)) -> list:
             for meme in memes:
                 if meme["url"] == msg.get("url"):
                     url = meme["url"]
-                    if not url.startswith("http://") and not url.startswith("https://"):
-                        url = url.replace("/","\\\\")
+                    # 处理本地路径
+                    if not url.startswith(("http://", "https://")):
+                        # 标准化路径并添加文件协议
+                        url = os.path.abspath(url.replace("\\", "/"))
+                        url = f"file:///{url}"
                     return MessageSegment.image(url)
             return MessageSegment.text("[未知表情包 URL]")
         else:
@@ -360,7 +364,12 @@ async def _():
         global user_config
         data = read_all_data()
         if data:
-            user_config = data
+            # 确保加载的数据包含所有必要的键
+            user_config["private"] = data.get("private", {})
+            user_config["group"] = data.get("group", {})
+        else:
+            # 如果无数据，保持默认结构
+            user_config = {"private": {}, "group": {}}
 
 # 定义关闭时的钩子函数，用于保存用户配置
 @driver.on_shutdown
