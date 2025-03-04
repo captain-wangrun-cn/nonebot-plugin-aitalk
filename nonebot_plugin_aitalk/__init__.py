@@ -352,6 +352,7 @@ async def _(event: GroupMessageEvent|PrivateMessageEvent, bot: Bot):
         add_cd(id)
         sequence[chat_type].remove(id)
     except Exception as e:
+        sequence[chat_type].remove(id) # 发生错误，移除队列
         user_config[chat_type][id]["messages"].pop()  # 发生错误，撤回消息
         await handler.send(f"很抱歉发生错误了！\n{e}", reply_message=True)
         raise e
