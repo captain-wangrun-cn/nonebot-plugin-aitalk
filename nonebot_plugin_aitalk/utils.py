@@ -11,20 +11,25 @@ class PokeMessage:
     uid = 0
 
 # 封装重复的代码逻辑，用于发送格式化后的回复
-async def send_formatted_reply(bot: Bot, event: GroupMessageEvent|PrivateMessageEvent, formatted_reply: list, reply_msg: bool):
+async def send_formatted_reply(
+    bot: Bot,
+    event: GroupMessageEvent | PrivateMessageEvent,
+    formatted_reply: list,
+    should_reply: bool  # 明确使用布尔值
+):
     for msg in formatted_reply:
         if isinstance(msg, MessageSegment):
             if msg.type == "image":
-                # 是否需要单独发送图片
-                await bot.send(event, msg, reply_message=reply_when_meme and reply_msg)
+                # 图片消息单独处理，结合 reply_when_meme 配置
+                await bot.send(event, msg, reply_message=reply_when_meme and should_reply)
             else:
-                await bot.send(event, msg, reply_message=reply_msg)
+                await bot.send(event, msg, reply_message=should_reply)
         elif isinstance(msg, list):
             # 将多段内容合并到一条消息
             result_msg = Message()
             for msg_ in msg:
                 result_msg += msg_
-            await bot.send(event, result_msg, reply_message=reply_msg)
+            await bot.send(event, result_msg, reply_message=should_reply)
         elif isinstance(msg, PokeMessage):
             # 戳一戳
             if isinstance(event,GroupMessageEvent):
@@ -34,10 +39,14 @@ async def send_formatted_reply(bot: Bot, event: GroupMessageEvent|PrivateMessage
 
 def need_reply_msg(reply: str):
     # 判断是否需要回复原消息
-    msg = json.loads(reply.replace("```json", "").replace("```", ""))
-    if msg["reply"] and reply_msg:
-        return True, msg["msg_id"]
-    return False, None
+    try:
+        msg = json.loads(reply.replace("```json", "").replace("```", ""))
+        # 只有当配置允许回复时，才检查 AI 的回复字段
+        if reply_msg and msg.get("reply", False):
+            return True, msg.get("msg_id")
+        return False, None
+    except Exception:
+        return False, None
 
 async def get_images(event: GroupMessageEvent|PrivateMessageEvent) -> list[str]:
     # 获取图片,返回base64数据
