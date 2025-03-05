@@ -6,6 +6,7 @@ class ModelConfig(BaseModel):
     api_url: str = Field(..., description="API地址")
     api_key: str = Field(..., description="API Key")
     model_name: str = Field(..., description="模型名称")
+    send_thinking: bool = Field(False, description="发送思考内容，如果有（仅在支持模型上有效，如deepseek-r1）")
     image_input: bool = Field(False, description="是否支持输入图片（适用于多模态模型，如qwen-vl）")
 
 class CompletionConfig(BaseModel):

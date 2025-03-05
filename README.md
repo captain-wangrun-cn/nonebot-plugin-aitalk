@@ -87,6 +87,7 @@ aitalk_api_list（api列表）格式：
     "model_name": "请求api用的模型名称",
     "api_url": "api接口地址",
     "image_input": 是否支持图片输入，适用于Qwen2.5-vl等多模态模型，默认为false
+    "send_thinking": 当有思维链时是否发送(不推荐开启！思维可能错乱)
 },
 {
     "name": "向用户展示的模型名称2",
@@ -131,7 +132,14 @@ aitalk_api_list = '
     "name": "deepseekr1-14b",
     "api_key": "sk-1145141919810",
     "model_name": "deepseek-ai/DeepSeek-R1-Distill-Qwen-14B",
-    "api_url": "https://api.siliconflow.cn/v1"
+    "api_url": "https://api.siliconflow.cn/v1",
+},
+{
+    "name": "deepseekr1",
+    "api_key": "sk-1145141919810",
+    "model_name": "deepseek-ai/DeepSeek-R1",
+    "api_url": "https://api.siliconflow.cn/v1",
+    "send_thinking": true
 },
 {
     "name": "gemma-27b",
@@ -193,10 +201,14 @@ aitalk_default_prompt_file = "D:\\prompt\\日富美.txt"
 [nonebot-plugin-llmchat](https://github.com/FuQuan233/nonebot-plugin-llmchat) 参考了部分代码以及prompt
 
 ## 📃 更新日志
+### 2.2.15（2025.03.05）
+- 🆕支持输出思维链(不推荐开启，思维可能错乱)
+- 🔧优化prompt
+- 🐛再次修复读取“是否回复”配置项的BUG，并测试通过[PR#5](https://github.com/captain-wangrun-cn/nonebot-plugin-aitalk/pull/5)
 ### 2.1.14（2025.03.04）
 - 🐛修复生成失败后队列未移除BUG
 ### 2.1.13（2025.03.04）
-- 🐛修复路径BUG和配置读取BUG[PR#1](https://github.com/captain-wangrun-cn/nonebot-plugin-aitalk/pull/4)
+- 🐛修复路径BUG和配置读取BUG[PR#4](https://github.com/captain-wangrun-cn/nonebot-plugin-aitalk/pull/4)
 ### 2.1.12（2025.03.04）
 - 🆕支持让AI理解图片（图片输入）
 - 🐛优化代码

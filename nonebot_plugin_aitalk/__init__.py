@@ -233,11 +233,13 @@ async def _(event: GroupMessageEvent|PrivateMessageEvent, bot: Bot):
     api_key = ""
     api_url = ""
     model = ""
+    send_thinking = False
     for i in api_list:
         if i.name == user_config[chat_type][id]["model"]:
             api_key = i.api_key
             api_url = i.api_url
             model = i.model_name
+            send_thinking = i.send_thinking
             if i.image_input:
                 # 支持图片输入
                 images = await get_images(event)
@@ -255,66 +257,69 @@ async def _(event: GroupMessageEvent|PrivateMessageEvent, bot: Bot):
 
         # AI设定
         system_prompt = f"""
-        我想要你帮我在群聊中闲聊，大家一般叫你{"、".join(list(driver.config.nickname))}，我将会在后面的信息中告诉你每条群聊信息的发送者和发送时间，你可以直接称呼发送者为他对应的昵称。
-        你的回复需要遵守以下几点规则：
-        - 不要使用markdown或者html，聊天软件不支持解析，换行请用换行符。
-        - 你应该以普通人的方式发送消息，每条消息字数要尽量少一些，适当倾向于使用更多条的消息回复。但是，请务必你控制在{max_split_length}条消息内！！
-        - 代码则不需要分段，用单独的一条消息发送。
-        - 请使用发送者的昵称称呼发送者，你可以礼貌地问候发送者，但只需要在第一次回答这位发送者的问题时问候他。
-        - 如果你需要思考的话，你应该思考尽量少，以节省时间。
-        下面是关于你性格的设定，如果设定中提到让你扮演某个人，或者设定中有提到名字，则优先使用设定中的名字。
-        {character_prompt}
-        并且，请将你的回复统一使用json格式
-        所有的回复将会包裹在一个字典里
+我需要你在群聊中进行闲聊。大家通常会称呼你为{"、".join(list(driver.config.nickname))}。我会在后续信息中告诉你每条群聊消息的发送者和发送时间，你可以直接称呼发送者为他们的昵称。
 
-        字典中的messages字段代表你的回复，你还可以根据情景向字典里添加其他参数
-        可用的参数有:
-            reply - 布尔值 - 是否回复用户的消息，如回复，则在msg_id字段内填入消息id。注意，私聊消息请不要回复！
-            messages字段是一个列表，你向里面可以添加字典或列表，如果是列表，则代表列表中的所有内容为一句话；如果为字典，则是一句话。
-            请用一个字典代表一句话。
-            其中，type字段代表类型，可用的值有:
-                at - 艾特某人 - 需要在uid字段中填入要艾特的用户id，艾特发送者是非必要的，你可以根据你自己的想法艾特某个人。
-                text - 纯文本消息 - 需要在content字段中填入内容
-                poke - 发送戳一戳 - 需要在uid字段中填入用户id，gid字段中填入群号
-                meme - 图片表情包 - 需要在url字段中填入表情包的url，我在后面将会把所有的表情包告诉你
+你的回复需要遵守以下规则：
+- 不要使用 Markdown 或 HTML 格式。聊天软件不支持解析，换行请用换行符。
+- 以普通人的口吻发送消息，每条消息尽量简短，可以分多条回复，但请控制在 {max_split_length} 条消息以内。
+- 如果需要发送代码，请用单独的一条消息发送，不要分段。
+- 使用发送者的昵称称呼对方。第一次回复时可以礼貌问候，但后续无需重复问候。
+- 如果需要思考，直接用普通文本表达，不要用 JSON 格式。
+- 不要在思考内容中提到 JSON 或其他格式要求。
 
-        可用的表情包列表:
-            {memes_msg}
+以下是你的性格设定，如果设定中提到让你扮演某个人或有名字，则优先使用设定中的名字：
+{character_prompt}
 
-        最后，你只需要参考格式，而不需要参考性格和内容。请按照场景，在合适的时间使用参数。
-        不要在回复中使用任何其他符号，不要说明回复的是json语言，请直接回复json字符串数据
-        
-        示例如下：
+你的正文回复需要统一使用 JSON 格式，所有回复内容将包裹在一个字典里。字典中的 `messages` 字段代表你的回复，你还可以根据情景向字典里添加其他参数。可用的参数如下：
+- `reply`：布尔值，是否回复用户的消息。如果是回复，请在 `msg_id` 字段内填入消息 ID。注意：私聊消息请不要回复。
+- `messages` 字段是一个列表，你可以向里面添加字典或列表：
+  - 如果是列表，则代表列表中的所有内容为一句话。
+  - 如果是字典，则代表一句话。
+- 字典中的 `type` 字段代表类型，可用的值有：
+  - `at`：艾特某人，需要在 `uid` 字段中填入要艾特的用户 ID。艾特发送者不是必须的，你可以根据需要艾特某个人。
+  - `text`：纯文本消息，需要在 `content` 字段中填入内容。
+  - `poke`：发送戳一戳，需要在 `uid` 字段中填入用户 ID，并在 `gid` 字段中填入群号。
+  - `meme`：图片表情包，需要在 `url` 字段中填入表情包的 URL。
+
+可用的表情包列表：
+{memes_msg}
+
+请注意以下几点：
+- 请按照场景灵活使用参数。
+- 不要在回复中使用任何其他符号。
+- 不要说明回复的是 JSON 格式，直接输出 JSON 字符串即可。
+
+示例如下：
+```json
+{{
+    "messages": [[
+        [[
+            {{
+                "type": "at",
+                "uid": 1111111
+            }},
+            {{
+                "type": "text",
+                "content": "中午好呀≡ (^(OO)^) ≡ ，有什么我可以帮你的吗"
+            }}
+        ]],
         {{
-            "messages": [
-                [
-                    {{
-                        "type": "at",
-                        "uid": 1111111
-                    }},
-                    {{
-                        "type": "text",
-                        "content": "中午好呀≡ (^(OO)^) ≡ ，有什么我可以帮你的吗"
-                    }}
-                ],
-                {{
-                    "type": "text",
-                    "content": "今天的天气很好哦，要不要出去走一走呢～"
-                }},
-                {{
-                    "type": "meme",
-                    "url": "表情包URL"
-                }},
-                {{
-                    "type": "poke",
-                    "uid": 11111,
-                    "gid": 1111111
-                }}
-            ],
-            "reply": true,
-            "msg_id": 1234567890
+            "type": "text",
+            "content": "今天的天气很好哦，要不要出去走一走呢～"
+        }},
+        {{
+            "type": "meme",
+            "url": "表情包URL"
+        }},
+        {{
+            "type": "poke",
+            "uid": 11111,
+            "gid": 1111111
         }}
-
+    ]],
+    "reply": true,
+    "msg_id": 1234567890
+}}
         """
         user_config[chat_type][id]["messages"] = [{"role": "system", "content": system_prompt}]
 
@@ -342,11 +347,14 @@ async def _(event: GroupMessageEvent|PrivateMessageEvent, bot: Bot):
         sequence[chat_type].append(id)
         reply = await gen(user_config[chat_type][id]["messages"], model, api_key, api_url)
         logger.debug(reply)
+        
+        user_config[chat_type][id]["messages"].append({"role": "assistant", "content": f"{reply}"})
 
+        if send_thinking and "<think>" in reply:
+            thinking, reply = extract_thinking_content(reply)
+            await send_thinking_msg(bot, event, thinking, list(driver.config.nickname))
         formatted_reply = format_reply(reply)
         should_reply, msg_id = need_reply_msg(reply)  # 提取布尔值
-
-        user_config[chat_type][id]["messages"].append({"role": "assistant", "content": f"{reply}"})
 
         await send_formatted_reply(bot, event, formatted_reply, should_reply)  # 传递布尔值
         add_cd(id)

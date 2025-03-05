@@ -4,11 +4,35 @@ from nonebot.drivers.httpx import httpx
 import base64
 from io import BytesIO
 import json
+import re
+import random
 from .config import reply_when_meme, reply_msg
 
 class PokeMessage:
     gid = 0
     uid = 0
+
+async def send_thinking_msg(
+    bot: Bot,
+    event: GroupMessageEvent | PrivateMessageEvent,
+    thinking_msg: str,
+    bot_nickname: list,
+):
+    nickname = random.choice(bot_nickname)
+    msg = [MessageSegment(
+        type="node",
+        data={
+            "name": nickname,
+            "uin": str(event.self_id),
+            "content": thinking_msg,
+        }
+    )]
+    send_kwargs = {}
+    if isinstance(event, PrivateMessageEvent):
+        send_kwargs["user_id"] = event.user_id
+    else:
+        send_kwargs["group_id"] = event.group_id
+    await bot.send_msg(message=msg, **send_kwargs)
 
 # 封装重复的代码逻辑，用于发送格式化后的回复
 async def send_formatted_reply(
@@ -62,3 +86,18 @@ async def url2base64(url):
     # 将base64编码进行解码
     imgdata=base64.b64encode(response.content).decode("utf-8")
     return imgdata
+  
+def extract_thinking_content(text):
+    # 提取思维链内容和正文内容
+    pattern = r"<think>(.*?)</think>"  # 匹配 <think> 标签及其内容
+    match = re.search(pattern, text, re.DOTALL)  # 使用 re.search 匹配任意位置
+
+    if match:
+        think_content = match.group(1).strip()  # 提取思维链内容
+        # 提取正文内容：去掉 <think> 标签及其内容
+        content = re.sub(pattern, "", text).strip()
+        print(content)
+        return think_content, content
+    else:
+        # 如果没有匹配到 <think> 标签，返回 None
+        return None, text.strip()
