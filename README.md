@@ -86,8 +86,8 @@ aitalk_api_list（api列表）格式：
     "api_key": "你的api key",
     "model_name": "请求api用的模型名称",
     "api_url": "api接口地址",
-    "image_input": 是否支持图片输入，适用于Qwen2.5-vl等多模态模型，默认为false
-    "send_thinking": 当有思维链时是否发送(不推荐开启！思维可能错乱)
+    "image_input": 是否支持图片输入，适用于Qwen2.5-vl等多模态模型,默认为false
+    "send_thinking": 当有思维链时是否发送(不推荐开启！思维可能错乱),默认为false
 },
 {
     "name": "向用户展示的模型名称2",
