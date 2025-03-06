@@ -201,6 +201,8 @@ aitalk_default_prompt_file = "D:\\prompt\\日富美.txt"
 [nonebot-plugin-llmchat](https://github.com/FuQuan233/nonebot-plugin-llmchat) 参考了部分代码以及prompt
 
 ## 📃 更新日志
+### 2.2.16（2025.03.06）
+- 🐛修复私聊开关BUG
 ### 2.2.15（2025.03.05）
 - 🆕支持输出思维链(不推荐开启，思维可能错乱)
 - 🔧优化prompt
