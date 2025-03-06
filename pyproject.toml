@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "nonebot_plugin_aitalk"
-version = "2.2.15"
+version = "2.2.16"
 description = "简单好用的AI聊天插件，支持多API，支持让AI理解图片，发送表情包，艾特，戳一戳等"
 authors = ["WR <wangrun114514@foxmail.com>"]
 license = "GPL-3.0"
