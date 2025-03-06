@@ -169,7 +169,7 @@ async def _(event: GroupMessageEvent|PrivateMessageEvent, args: Message = Comman
             enable_private(id) if isinstance(event,PrivateMessageEvent) else enable(id)
             await switch.finish("ai对话已经开启~")
         elif arg == "关闭":
-            disable_private(id) if isinstance(event,PrivateMessagEvent) else disable(id)
+            disable_private(id) if isinstance(event,PrivateMessageEvent) else disable(id)
             await switch.finish("ai对话已经禁用~")
         else:
             await switch.finish("请使用 /ai对话 <开启/关闭> 来开启或关闭ai对话~")
