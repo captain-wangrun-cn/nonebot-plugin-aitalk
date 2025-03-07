@@ -29,6 +29,20 @@ _✨ 简单好用的AI聊天插件 ✨_
 >[!IMPORTANT]
 >写的比较史，欢迎提pr或issue！
 
+## 🆕 特色
+
+### AI可以发的
+
+- 表情包
+- 戳一戳
+- 艾特
+- 群内禁言
+
+### 可以发给AI的 (可以做的)
+
+- 图片/表情包 (需模型支持)
+- 联网搜索 (需模型支持)
+
 ## 💿 安装
 
 <details open>
@@ -201,6 +215,9 @@ aitalk_default_prompt_file = "D:\\prompt\\日富美.txt"
 [nonebot-plugin-llmchat](https://github.com/FuQuan233/nonebot-plugin-llmchat) 参考了部分代码以及prompt
 
 ## 📃 更新日志
+### 2.3.17（2025.03.07）
+- 🐛修复超出最长上下文数量时的BUG
+- 🆕增加禁言用户的功能[PR#8](https://github.com/captain-wangrun-cn/nonebot-plugin-aitalk/pull/8)
 ### 2.2.16（2025.03.06）
 - 🐛修复私聊开关BUG
 ### 2.2.15（2025.03.05）
