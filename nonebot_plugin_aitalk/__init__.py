@@ -289,7 +289,7 @@ async def _(event: GroupMessageEvent|PrivateMessageEvent, bot: Bot):
   - `poke`：发送戳一戳，需要在 `uid` 字段中填入用户 ID,并在 `gid` 字段中填入群号。
   - `meme`：图片表情包，需要在 `url` 字段中填入表情包的 URL。
   - `ban`：禁言用户,在 `uid` 字段中填入用户 ID,并在 `gid` 字段中填入群号,同时在 `duration` 字段中填入禁言时间;
-    当你想要调戏用户、活跃气氛、或认为需要对用户适当惩罚时等情景可以使用,此时禁言时间需控制在60以内;
+    当你想要调戏用户、活跃气氛、或认为需要对用户适当惩罚时等情景可以使用,此情景禁言时间需控制在60以内;
     若用户发送了含有政治、色情、辱骂等违禁词时,应当使用更严厉更激进的禁言时间,例如1800(30分钟)或3600(1小时)甚至更长。
 
 可用的表情包列表：
@@ -365,7 +365,6 @@ async def _(event: GroupMessageEvent|PrivateMessageEvent, bot: Bot):
         # 从AI处获取回复
         reply = await gen(user_config[chat_type][id]["messages"], model, api_key, api_url)
         logger.debug(reply)
-        logger.info(reply)
         
         user_config[chat_type][id]["messages"].append({"role": "assistant", "content": f"{reply}"})
 
