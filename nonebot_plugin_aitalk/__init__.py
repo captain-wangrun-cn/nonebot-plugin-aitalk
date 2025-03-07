@@ -362,13 +362,12 @@ async def _(event: GroupMessageEvent|PrivateMessageEvent, bot: Bot):
     try:
         sequence[chat_type].append(id)
         # 从AI处获取回复
-        reply = await gen(user_config[chat_type][id]["messages"], model, api_key, api_url)
+        reply, thinking = await gen(user_config[chat_type][id]["messages"], model, api_key, api_url)
         logger.debug(reply)
         
         user_config[chat_type][id]["messages"].append({"role": "assistant", "content": f"{reply}"})
 
-        if send_thinking and "<think>" in reply:
-            thinking, reply = extract_thinking_content(reply)
+        if send_thinking:
             await send_thinking_msg(bot, event, thinking, list(driver.config.nickname))
         formatted_reply = format_reply(reply)
         should_reply, msg_id = need_reply_msg(reply)  # 提取布尔值

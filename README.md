@@ -101,7 +101,7 @@ aitalk_api_list（api列表）格式：
     "model_name": "请求api用的模型名称",
     "api_url": "api接口地址",
     "image_input": 是否支持图片输入，适用于Qwen2.5-vl等多模态模型,默认为false
-    "send_thinking": 当有思维链时是否发送(不推荐开启！思维可能错乱),默认为false
+    "send_thinking": 当有思维链时是否发送,默认为false
 },
 {
     "name": "向用户展示的模型名称2",
@@ -215,6 +215,8 @@ aitalk_default_prompt_file = "D:\\prompt\\日富美.txt"
 [nonebot-plugin-llmchat](https://github.com/FuQuan233/nonebot-plugin-llmchat) 参考了部分代码以及prompt
 
 ## 📃 更新日志
+### 2.3.18（2025.03.07）
+- 🐛修复思维链输出
 ### 2.3.17（2025.03.07）
 - 🐛修复超出最长上下文数量时的BUG
 - 🆕增加禁言用户的功能[PR#8](https://github.com/captain-wangrun-cn/nonebot-plugin-aitalk/pull/8)
