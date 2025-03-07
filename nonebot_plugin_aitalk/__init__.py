@@ -350,8 +350,8 @@ async def _(event: GroupMessageEvent|PrivateMessageEvent, bot: Bot):
     """
 
     if len(user_config[chat_type][id]["messages"]) >= max_context_length:
-        # 超过上下文数量限制，删除最旧的消息（保留设定）
-        user_config[chat_type][id]["messages"] = [user_config[chat_type][id]["messages"][0]] + user_config[chat_type][id]["messages"][2:]
+        # 超过上下文数量限制，删除最旧的两条消息（保留设定）
+        user_config[chat_type][id]["messages"] = [user_config[chat_type][id]["messages"][0]] + user_config[chat_type][id]["messages"][3:]
     user_config[chat_type][id]["messages"].append({"role": "user", "content": [{"type": "text", "text": user_prompt}]})
 
     if images:
