@@ -11,7 +11,13 @@ from .config import reply_when_meme, reply_msg
 class PokeMessage:
     gid = 0
     uid = 0
-
+class BanUser:
+    # 群号
+    gid = 0
+    # 用户号
+    uid = 0
+    # 禁言时间,单位是秒
+    duration = 0
 async def send_thinking_msg(
     bot: Bot,
     event: GroupMessageEvent | PrivateMessageEvent,
@@ -60,7 +66,31 @@ async def send_formatted_reply(
                 await bot.group_poke(group_id=msg.gid, user_id=msg.uid)
             else:
                 await bot.friend_poke(user_id=msg.uid)
+        elif isinstance(msg, BanUser):
+            # 禁言
+            if isinstance(event,GroupMessageEvent):
+                # 检查 bot 是否有管理员权限
+                try:
+                    member_info = await bot.get_group_member_info(group_id=msg.gid, user_id=bot.self_id)
+                    if member_info["role"] not in ["admin", "owner"]: 
+                        await bot.send(event, "呀呀呀，似乎禁言不了呢……", reply_message=should_reply)
+                        return
+                except Exception:
+                    await bot.send(event, "呀呀呀，似乎禁言不了呢……", reply_message=should_reply)
+                    return
 
+                # 检查发送消息者的权限组
+                try:
+                    sender_info = await bot.get_group_member_info(group_id=msg.gid, user_id=msg.uid)
+                    if sender_info["role"] in ["admin", "owner"]:# 管理员或群主
+                        await bot.send(event, "呀呀呀，似乎禁言不了呢……", reply_message=should_reply)
+                        return
+                except Exception:
+                    await bot.send(event, "呀呀呀，似乎禁言不了呢……", reply_message=should_reply)
+                    return
+                await bot.set_group_ban(group_id=msg.gid, user_id=msg.uid, duration=msg.duration)
+            else:
+                pass
 def need_reply_msg(reply: str):
     # 判断是否需要回复原消息
     try:

@@ -20,12 +20,13 @@ from nonebot.adapters.onebot.v11 import (
 require("nonebot_plugin_localstore")
 require("nonebot_plugin_alconna")
 
-import json,time
+import json,time,random
 from .config import *
 from .api import gen
 from .data import *
 from .cd import *
 from .utils import *
+
 
 __plugin_meta__ = PluginMetadata(
     name="简易AI聊天",
@@ -48,6 +49,7 @@ def format_reply(reply: (str | dict)) -> list:
 
     result = []
 
+
     def process_message(msg):
         msg_type = msg.get("type")
         if msg_type == "text":
@@ -62,6 +64,12 @@ def format_reply(reply: (str | dict)) -> list:
             poke.gid = msg.get("gid", 0)
             poke.uid = msg.get("uid", 0)
             return poke
+        elif msg_type == "ban":
+            ban = BanUser()
+            ban.gid = msg.get("gid", 0)
+            ban.uid = msg.get("uid", 0)
+            ban.duration = msg.get("duration", 0)
+            return ban
         elif msg_type == "meme":
             # 表情包
             for meme in memes:
@@ -269,17 +277,19 @@ async def _(event: GroupMessageEvent|PrivateMessageEvent, bot: Bot):
 
 以下是你的性格设定，如果设定中提到让你扮演某个人或有名字，则优先使用设定中的名字：
 {character_prompt}
-
 你的正文回复需要统一使用 JSON 格式，所有回复内容将包裹在一个字典里。字典中的 `messages` 字段代表你的回复，你还可以根据情景向字典里添加其他参数。可用的参数如下：
-- `reply`：布尔值，是否回复用户的消息。如果是回复，请在 `msg_id` 字段内填入消息 ID。注意：私聊消息请不要回复。
+- `reply`：布尔值，是否回复用户的消息。如果是回复，请在 `msg_id` 字段内填入消息 ID。注意:私聊消息请不要回复。
 - `messages` 字段是一个列表，你可以向里面添加字典或列表：
   - 如果是列表，则代表列表中的所有内容为一句话。
   - 如果是字典，则代表一句话。
 - 字典中的 `type` 字段代表类型，可用的值有：
-  - `at`：艾特某人，需要在 `uid` 字段中填入要艾特的用户 ID。艾特发送者不是必须的，你可以根据需要艾特某个人。
+  - `at`：艾特某人，需要在 `uid` 字段中填入要艾特的用户 ID。艾特发送者不是必须的,你可以根据需要艾特某个人。
   - `text`：纯文本消息，需要在 `content` 字段中填入内容。
-  - `poke`：发送戳一戳，需要在 `uid` 字段中填入用户 ID，并在 `gid` 字段中填入群号。
+  - `poke`：发送戳一戳，需要在 `uid` 字段中填入用户 ID,并在 `gid` 字段中填入群号。
   - `meme`：图片表情包，需要在 `url` 字段中填入表情包的 URL。
+  - `ban`：禁言用户,在 `uid` 字段中填入用户 ID,并在 `gid` 字段中填入群号,同时在 `duration` 字段中填入禁言时间;
+    当你想要调戏用户、活跃气氛、或认为需要对用户适当惩罚时等情景可以使用,此情景禁言时间需控制在60以内;
+    若用户发送了含有政治、色情、辱骂等违禁词时,应当使用更严厉更激进的禁言时间,例如1800(30分钟)或3600(1小时)甚至更长。
 
 可用的表情包列表：
 {memes_msg}
@@ -315,6 +325,12 @@ async def _(event: GroupMessageEvent|PrivateMessageEvent, bot: Bot):
             "type": "poke",
             "uid": 11111,
             "gid": 1111111
+        }},
+        {{
+            "type": "ban",
+            "uid": 11111,
+            "gid": 1111111,
+            "duration": 8
         }}
     ]],
     "reply": true,
@@ -345,6 +361,7 @@ async def _(event: GroupMessageEvent|PrivateMessageEvent, bot: Bot):
 
     try:
         sequence[chat_type].append(id)
+        # 从AI处获取回复
         reply = await gen(user_config[chat_type][id]["messages"], model, api_key, api_url)
         logger.debug(reply)
         
