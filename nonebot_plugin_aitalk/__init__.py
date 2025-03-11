@@ -215,7 +215,7 @@ async def _(event: GroupMessageEvent|PrivateMessageEvent, bot: Bot):
     id = str(event.user_id) if isinstance(event,PrivateMessageEvent) else str(event.group_id)
     chat_type = "private" if isinstance(event,PrivateMessageEvent) else "group"
 
-    if isinstance(event, GroupMessageEvent) and id == "2854196310":
+    if isinstance(event, GroupMessageEvent) and str(event.user_id) == "2854196310":
         # 排除Q群管家
         return
 
