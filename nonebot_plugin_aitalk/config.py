@@ -3,6 +3,7 @@ from nonebot import get_plugin_config
 
 class ModelConfig(BaseModel):
     name: str = Field(..., description="模型对外公开名称")
+    description: str = Field("", description="模型对外公开描述")
     api_url: str = Field(..., description="API地址")
     api_key: str = Field(..., description="API Key")
     model_name: str = Field(..., description="模型名称")

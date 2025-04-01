@@ -102,6 +102,7 @@ aitalk_api_list（api列表）格式：
     "api_url": "api接口地址",
     "image_input": 是否支持图片输入，适用于Qwen2.5-vl等多模态模型,默认为false
     "send_thinking": 当有思维链时是否发送,默认为false
+    "description": "模型描述，用于展示给用户(非必填)"
 },
 {
     "name": "向用户展示的模型名称2",
@@ -147,6 +148,7 @@ aitalk_api_list = '
     "api_key": "sk-1145141919810",
     "model_name": "deepseek-ai/DeepSeek-R1-Distill-Qwen-14B",
     "api_url": "https://api.siliconflow.cn/v1",
+    "description": "深度求索 R1 轻量模型，14b蒸馏版本"
 },
 {
     "name": "deepseekr1",
@@ -215,6 +217,9 @@ aitalk_default_prompt_file = "D:\\prompt\\日富美.txt"
 [nonebot-plugin-llmchat](https://github.com/FuQuan233/nonebot-plugin-llmchat) 参考了部分代码以及prompt
 
 ## 📃 更新日志
+### 2.3.20（2025.04.01）
+- 🐛尝试修复思维链问题(#10)(https://github.com/captain-wangrun-cn/nonebot-plugin-aitalk/issues/10)
+- 🆕添加了模型描述，选择模型时发送给用户
 ### 2.3.19（2025.03.11）
 - 🐛修复Q群管家检测BUG
 ### 2.3.18（2025.03.07）

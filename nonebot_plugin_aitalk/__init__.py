@@ -2,7 +2,7 @@ import os
 from nonebot import on_message, on_command, get_driver, require, logger
 from nonebot.rule import Rule
 from nonebot.plugin import PluginMetadata
-from nonebot.permission import SUPERUSER
+from nonebot.permission import SUPERUSER, Permission
 from nonebot.adapters import Message
 from nonebot.params import CommandArg
 from nonebot.adapters.onebot.v11 import (
@@ -126,11 +126,17 @@ def format_reply(reply: (str | dict)) -> list:
 model_choose = on_command(
     cmd="选择模型",
     aliases={"模型选择"},
-    permission=GROUP_ADMIN|GROUP_OWNER|SUPERUSER|PRIVATE_FRIEND,
+    permission=GROUP|PRIVATE_FRIEND,
     block=True
 )
 @model_choose.handle()
-async def _(event: GroupMessageEvent|PrivateMessageEvent, args: Message = CommandArg()):
+async def _(bot: Bot, event: GroupMessageEvent|PrivateMessageEvent, args: Message = CommandArg()):
+    if isinstance(event, GroupMessageEvent):
+        perm = GROUP_ADMIN|GROUP_OWNER|SUPERUSER
+        if not (await perm(bot, event)):
+            # 无权限
+            await model_choose.finish("你没有权限使用该命令啦~请让管理员来吧", at_sender=True)
+
     if model := args.extract_plain_text():
         id = str(event.user_id) if isinstance(event,PrivateMessageEvent) else str(event.group_id)
         chat_type = "private" if isinstance(event,PrivateMessageEvent) else "group"
@@ -144,6 +150,8 @@ async def _(event: GroupMessageEvent|PrivateMessageEvent, args: Message = Comman
         msg = "可以使用的模型有这些哦："
         for i in api_list:
             msg += f"\n{i.name}"
+            if i.description:
+                msg += f"\n - {i.description}\n"
         msg += "\n请发送 /选择模型 <模型名> 来选择模型哦！"
         await handler.finish(msg, at_sender=True)
 
@@ -152,11 +160,17 @@ async def _(event: GroupMessageEvent|PrivateMessageEvent, args: Message = Comman
 clear_history = on_command(
     cmd="清空聊天记录",
     aliases={"清空对话"},
-    permission=SUPERUSER|GROUP_OWNER|GROUP_ADMIN|PRIVATE_FRIEND,
+    permission=GROUP|PRIVATE_FRIEND,
     block=True
 )
 @clear_history.handle()
-async def _(event: GroupMessageEvent|PrivateMessageEvent):
+async def _(bot: Bot, event: GroupMessageEvent|PrivateMessageEvent):
+    if isinstance(event, GroupMessageEvent):
+        perm = GROUP_ADMIN|GROUP_OWNER|SUPERUSER
+        if not (await perm(bot, event)):
+            # 无权限
+            await model_choose.finish("你没有权限使用该命令啦~请让管理员来吧", at_sender=True)
+
     try:
         user_config["private" if isinstance(event,PrivateMessageEvent) else "group"][str(event.user_id) if isinstance(event,PrivateMessageEvent) else str(event.group_id)]["messages"] = []
     except KeyError: pass
@@ -166,11 +180,17 @@ async def _(event: GroupMessageEvent|PrivateMessageEvent):
 switch = on_command(
     cmd="ai对话",
     aliases={"切换ai对话"},
-    permission=SUPERUSER|GROUP_ADMIN|GROUP_OWNER|PRIVATE_FRIEND,
+    permission=GROUP|PRIVATE_FRIEND,
     block=True
 )
 @switch.handle()
-async def _(event: GroupMessageEvent|PrivateMessageEvent, args: Message = CommandArg()):
+async def _(bot: Bot, event: GroupMessageEvent|PrivateMessageEvent, args: Message = CommandArg()):
+    if isinstance(event, GroupMessageEvent):
+        perm = GROUP_ADMIN|GROUP_OWNER|SUPERUSER
+        if not (await perm(bot, event)):
+            # 无权限
+            await model_choose.finish("你没有权限使用该命令啦~请让管理员来吧", at_sender=True)
+
     if arg := args.extract_plain_text():
         id = event.user_id if isinstance(event,PrivateMessageEvent) else event.group_id
         if arg == "开启":
@@ -400,5 +420,6 @@ async def _():
 @driver.on_shutdown
 async def _():
     if save_user_config:
+        global user_config
         write_all_data(user_config)    
     

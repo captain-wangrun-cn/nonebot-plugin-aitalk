@@ -116,18 +116,3 @@ async def url2base64(url):
     # 将base64编码进行解码
     imgdata=base64.b64encode(response.content).decode("utf-8")
     return imgdata
-  
-def extract_thinking_content(text):
-    # 提取思维链内容和正文内容
-    pattern = r"<think>(.*?)</think>"  # 匹配 <think> 标签及其内容
-    match = re.search(pattern, text, re.DOTALL)  # 使用 re.search 匹配任意位置
-
-    if match:
-        think_content = match.group(1).strip()  # 提取思维链内容
-        # 提取正文内容：去掉 <think> 标签及其内容
-        content = re.sub(pattern, "", text).strip()
-        print(content)
-        return think_content, content
-    else:
-        # 如果没有匹配到 <think> 标签，返回 None
-        return None, text.strip()
