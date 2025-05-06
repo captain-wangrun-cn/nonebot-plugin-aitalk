@@ -215,6 +215,8 @@ aitalk_group_prompts_dir = "./aitalk_config/group_prompts"
 <img src="imgs/QQ20250222-232730.png">
 <img src="imgs/QQ20250222-232813.png">
 
+#### 多群自定义提示词参考配置
+<img src="imgs/Snipaste_2025-05-06_23-17-39.png">
 ## 🍟参考
 [nonebot-plugin-llmchat](https://github.com/FuQuan233/nonebot-plugin-llmchat) 参考了部分代码以及prompt
 

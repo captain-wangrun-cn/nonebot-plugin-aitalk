@@ -38,8 +38,16 @@ class Config(BaseModel):
         default_factory=CompletionConfig, description="生成配置"
     )
     aitalk_default_prompt_file: str = Field(
-        "", description="默认提示词文件，和默认提示词二选一，优先使用文件"
+        "",
+        description="默认提示词文件路径 (相对于机器人运行根目录)，和默认提示词二选一，优先使用文件",
     )
+
+    # 新增：群聊专属提示词文件存放目录
+    aitalk_group_prompts_dir: str = Field(
+        "./aitalk_config/group_prompts",
+        description="群聊专属提示词文件存放目录 (例如: ./aitalk_config/group_prompts/12345.txt)。路径相对于机器人运行根目录。",
+    )
+
     aitalk_available_memes: list[MemeConfig] = Field(..., description="可用表情包")
     aitalk_reply_when_meme: bool = Field(
         False, description="当发送表情包时是否回复原消息"
@@ -57,7 +65,7 @@ class Config(BaseModel):
     aitalk_chat_cd: int = Field(5, description="冷却cd,单位为秒")
 
 
-plugin_config = get_plugin_config(Config)
+plugin_config = get_plugin_config(Config)  # 加载插件配置
 command_start = plugin_config.aitalk_command_start
 api_list = plugin_config.aitalk_api_list
 default_prompt = plugin_config.aitalk_default_prompt
@@ -71,3 +79,5 @@ save_user_config = plugin_config.aitalk_save_user_config
 default_available = plugin_config.aitalk_default_available
 default_available_private = plugin_config.aitalk_default_available_private
 chat_cd = plugin_config.aitalk_chat_cd
+# 新增：导出群聊提示词目录配置
+group_prompts_dir = plugin_config.aitalk_group_prompts_dir
