@@ -164,10 +164,7 @@ async def send_formatted_reply(
                     speed=tts_config.speed,
                     volume=tts_config.volume,
                 )
-                await bot.send(
-                    event,
-                    MessageSegment.record(file=tts_file)
-                )
+                await bot.send(event, MessageSegment.record(file=tts_file))
             except Exception as e:
                 logger.error(f"发送TTS失败: {e}")
                 await bot.send(event, "[AI说话失败了...]", **current_reply_params)
@@ -204,20 +201,147 @@ def need_reply_msg(reply_json_str: str, event: GroupMessageEvent | PrivateMessag
         return False, None
 
 
-async def get_images(event: GroupMessageEvent | PrivateMessageEvent) -> list[str]:
-    # 获取图片,返回base64数据
-    images = []
-    for segment in event.get_message():
+# --- 修改后的 get_images 函数 ---
+async def get_images(
+    event: GroupMessageEvent | PrivateMessageEvent, bot: Bot
+) -> list[str]:
+    """
+    获取消息中的图片，包括当前消息和被回复消息中的图片。
+    返回base64编码的图片数据列表。
+    """
+    images_base64 = []
+    processed_urls = set()  # 用于防止重复处理相同URL的图片
+
+    # 1. 从当前用户发送的消息中提取图片
+    logger.debug(f"get_images: 正在处理当前事件消息 (ID: {event.message_id})")
+    current_message_obj = event.get_message()
+    for segment in current_message_obj:
         if segment.type == "image":
             image_url = segment.data.get("url")
-            if image_url:
+            if image_url and image_url not in processed_urls:
                 try:
-                    images.append(await url2base64(image_url))
+                    logger.debug(f"get_images: 正在下载并转换当前消息图片: {image_url}")
+                    b64_img = await url2base64(image_url)
+                    images_base64.append(b64_img)
+                    processed_urls.add(image_url)
                 except Exception as e:
-                    logger.error(f"下载或转换图片失败: {image_url}, error: {e}")
-            else:
-                logger.warning("图片消息段缺少 'url' 数据。")
-    return images
+                    logger.warning(
+                        f"get_images: 下载或转换当前消息图片失败: {image_url}, 错误: {e}"
+                    )
+            elif not image_url:
+                logger.warning("get_images: 当前消息图片段缺少 'url' 数据。")
+
+    # 2. 如果是回复消息，尝试从被回复的原始消息中提取图片
+    reply_segment_info = event.reply  # 获取回复信息
+    if reply_segment_info:
+        logger.debug(
+            f"get_images: 检测到回复消息，被回复消息ID: {reply_segment_info.message_id}"
+        )
+        try:
+            original_message_id = int(reply_segment_info.message_id)
+            logger.debug(
+                f"get_images: 正在调用 bot.get_msg 获取原始消息 (ID: {original_message_id})"
+            )
+            original_msg_data = await bot.get_msg(message_id=original_message_id)
+            logger.debug(
+                f"get_images: bot.get_msg 返回: {str(original_msg_data)[:500]}"
+            )  # 记录部分返回数据
+
+            if original_msg_data and "message" in original_msg_data:
+                message_content = original_msg_data["message"]
+                logger.debug(
+                    f"get_images: 从原始消息数据中提取的 'message' 字段 (类型: {type(message_content)}): {str(message_content)[:500]}"
+                )
+
+                parsed_message_input_for_obj_creation = None
+                if isinstance(message_content, str):
+                    # 检查是否像JSON数组
+                    if message_content.startswith("[") and message_content.endswith(
+                        "]"
+                    ):
+                        try:
+                            parsed_list = json.loads(message_content)
+                            if isinstance(parsed_list, list):
+                                parsed_message_input_for_obj_creation = parsed_list
+                            else:  # 解析成功但不是列表
+                                parsed_message_input_for_obj_creation = message_content
+                        except json.JSONDecodeError:  # 解析失败，则按原样处理字符串
+                            parsed_message_input_for_obj_creation = message_content
+                    else:  # 不是JSON数组格式的字符串，直接使用
+                        parsed_message_input_for_obj_creation = message_content
+                elif isinstance(message_content, list):  # 已经是列表
+                    parsed_message_input_for_obj_creation = message_content
+                else:  # 其他类型，尝试转为字符串
+                    logger.warning(
+                        f"get_images: 未知类型的被回复消息内容: {type(message_content)}，将尝试转为字符串。"
+                    )
+                    parsed_message_input_for_obj_creation = str(message_content)
+
+                # 手动构建 OneBotMessage 对象
+                replied_msg_obj = OneBotMessage()
+                if isinstance(parsed_message_input_for_obj_creation, list):
+                    for seg_dict in parsed_message_input_for_obj_creation:
+                        if isinstance(seg_dict, dict) and "type" in seg_dict:
+                            try:
+                                replied_msg_obj.append(
+                                    MessageSegment(
+                                        type=seg_dict["type"],
+                                        data=seg_dict.get("data", {}),
+                                    )
+                                )
+                            except Exception as e_seg:
+                                logger.warning(
+                                    f"get_images: 从被回复消息创建MessageSegment失败: {seg_dict}, 错误: {e_seg}"
+                                )
+                        else:
+                            logger.warning(
+                                f"get_images: 被回复消息的段列表中发现无效项: {seg_dict}"
+                            )
+                elif isinstance(
+                    parsed_message_input_for_obj_creation, str
+                ):  # 如果解析后是字符串 (可能是CQ码)
+                    replied_msg_obj = OneBotMessage(
+                        parsed_message_input_for_obj_creation
+                    )
+
+                logger.debug(
+                    f"get_images: 为被回复消息构造的 OneBotMessage 对象: {str(replied_msg_obj)[:300]}"
+                )
+
+                # 从构造的 OneBotMessage 对象中提取图片
+                for segment in replied_msg_obj:
+                    if segment.type == "image":
+                        image_url = segment.data.get("url")
+                        if image_url and image_url not in processed_urls:
+                            try:
+                                logger.debug(
+                                    f"get_images: 正在下载并转换被回复消息图片: {image_url}"
+                                )
+                                b64_img = await url2base64(image_url)
+                                images_base64.append(b64_img)
+                                processed_urls.add(image_url)
+                            except Exception as e:
+                                logger.warning(
+                                    f"get_images: 下载或转换被回复消息图片失败: {image_url}, 错误: {e}"
+                                )
+                        elif not image_url:
+                            logger.warning(
+                                "get_images: 被回复消息图片段缺少 'url' 数据。"
+                            )
+
+        except ValueError:  # int(reply_segment_info.message_id) 可能失败
+            logger.warning(
+                f"get_images: 无法将被回复消息ID '{reply_segment_info.message_id}' 转换为整数。"
+            )
+        except Exception as e_reply:
+            logger.error(
+                f"get_images: 处理被回复消息时发生错误: {e_reply}", exc_info=True
+            )
+    else:
+        logger.debug("get_images: 当前消息不是回复消息。")
+
+    logger.info(f"get_images: 图片提取完成，共找到 {len(images_base64)} 张独立图片。")
+    return images_base64
 
 
 async def url2base64(url):
@@ -227,25 +351,32 @@ async def url2base64(url):
     imgdata = base64.b64encode(response.content).decode("utf-8")
     return imgdata
 
-async def fish_audio_tts(text, reference_id: str = "", speed: float = 1.0, volume: float = 0.0) -> str:
+
+async def fish_audio_tts(
+    text, reference_id: str = "", speed: float = 1.0, volume: float = 0.0
+) -> str:
     # FishAudio 语音合成, 返回silk文件路径
     cache_dir = store.get_plugin_cache_dir()
-    file_id = random.randint(0,1145141919)
+    file_id = random.randint(0, 1145141919)
     pcm_file = cache_dir / f"tts_{file_id}.pcm"
 
     async with aiofiles.open(pcm_file, "wb") as f:
-        for chunk in session.tts(TTSRequest(
-            reference_id=reference_id,
-            text=text,
-            format="pcm",
-            sample_rate=24000,
-            prosody=Prosody(speed=speed, volume=volume),
-        )):
+        for chunk in session.tts(
+            TTSRequest(
+                reference_id=reference_id,
+                text=text,
+                format="pcm",
+                sample_rate=24000,
+                prosody=Prosody(speed=speed, volume=volume),
+            )
+        ):
             await f.write(chunk)
 
     silk_file_name = cache_dir / f"tts_{file_id}.silk"
     silk_file = open(silk_file_name, "wb")
-    await run_sync(pysilk.encode)(open(pcm_file, "rb"), silk_file, sample_rate=24000, bit_rate=24000)
+    await run_sync(pysilk.encode)(
+        open(pcm_file, "rb"), silk_file, sample_rate=24000, bit_rate=24000
+    )
     silk_file.close()
 
     return silk_file_name.as_uri()
