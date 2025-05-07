@@ -234,7 +234,7 @@ aitalk_tts_config = '
 
 
 ## 贡献者
-<a href="https://github.com/eryajf/learn-github/graphs/contributors">
+<a href="https://github.com/captain-wangrun-cn/nonebot-plugin-aitalk/graphs/contributors">
   <img src="https://contrib.rocks/image?repo=captain-wangrun-cn/nonebot-plugin-aitalk" />
 </a>
 
