@@ -232,7 +232,13 @@ aitalk_tts_config = '
 ### 🍟参考
 [nonebot-plugin-llmchat](https://github.com/FuQuan233/nonebot-plugin-llmchat) 参考了部分代码以及prompt
 
+
 ## 📃 更新日志
+### 3.5.23（2025.05.07）
+- 🆕图片输入支持引用带有图片的消息[PR#12](https://github.com/captain-wangrun-cn/nonebot-plugin-aitalk/pull/12)
+- 🆕支持多图输入[PR#12](https://github.com/captain-wangrun-cn/nonebot-plugin-aitalk/pull/12)
+- 🔧添加了一些请求时的异常处理
+- 🐛修复README中配置不完全
 ### 3.4.22（2025.05.07）
 - 🆕新增语音合成功能
 - 🔧优化README

@@ -1,7 +1,8 @@
-from openai import AsyncOpenAI
+from openai import AsyncOpenAI, InternalServerError
 from .config import plugin_config
 from typing import Tuple
 import re
+from nonebot.log import logger
 
 
 def extract_thinking_content(text):
@@ -21,23 +22,30 @@ def extract_thinking_content(text):
 
 async def gen(
     messages: dict, model_name: str, api_key: str, api_url: str
-) -> Tuple[str | None, str | None]:
+) -> Tuple[str | None, str | None, bool, str|None]:
     client = AsyncOpenAI(base_url=api_url, api_key=api_key)
 
-    completion = await client.chat.completions.create(
-        model=model_name,
-        messages=messages,
-        max_tokens=plugin_config.aitalk_completion_config.max_token,
-        temperature=plugin_config.aitalk_completion_config.temperature,
-        top_p=plugin_config.aitalk_completion_config.top_p,
-    )
+    try:
+        completion = await client.chat.completions.create(
+            model=model_name,
+            messages=messages,
+            max_tokens=plugin_config.aitalk_completion_config.max_token,
+            temperature=plugin_config.aitalk_completion_config.temperature,
+            top_p=plugin_config.aitalk_completion_config.top_p,
+        )
 
-    message = completion.choices[0].message.content
-    reasoning = ""
+        message = completion.choices[0].message.content
+        reasoning = ""
 
-    if "reasoning_content" in completion.choices[0].message.model_extra:
-        reasoning = completion.choices[0].message.model_extra["reasoning_content"]
-    elif "<think>" in message and "</think>" in message:
-        reasoning, message = extract_thinking_content(message)
-
-    return message, reasoning
+        if "reasoning_content" in completion.choices[0].message.model_extra:
+            reasoning = completion.choices[0].message.model_extra["reasoning_content"]
+        elif "<think>" in message and "</think>" in message:
+            reasoning, message = extract_thinking_content(message)
+    
+        return message, reasoning, True, None
+    except InternalServerError as e:
+        logger.error(f"Internal Server Error: {e}")
+        return None, None, False, "很抱歉！可能是服务器负载过高，稍后再试哦~"+str(e)
+    except Exception as e:
+        logger.error(f"Error: {e}")
+        return None, None, False, "很抱歉！发生了未知错误，请稍后再试哦~"+str(e)

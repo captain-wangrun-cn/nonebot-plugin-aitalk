@@ -610,12 +610,18 @@ async def _(event: GroupMessageEvent | PrivateMessageEvent, bot: Bot):
         sequence[chat_type].append(id_key)  # 加入处理队列
 
         # 从AI处获取回复
-        reply_content_str, thinking_content_str = await gen(
+        reply_content_str, thinking_content_str, success, err_msg = await gen(
             user_config[chat_type][id_key]["messages"],
             model_name_val,
             api_key_val,
             api_url_val,
         )
+
+        if not success:
+            await handler.send(err_msg)
+            
+            if user_config[chat_type][id_key]["messages"][-1].get("role") == "user":
+                user_config[chat_type][id_key]["messages"].pop()  # 移除对应的user消息
 
         logger.debug(
             f"AI原始回复 ({chat_type} {id_key}): {str(reply_content_str)[:500]}..."
