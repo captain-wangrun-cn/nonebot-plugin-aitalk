@@ -26,6 +26,12 @@ class MemeConfig(BaseModel):
     url: str = Field(..., description="表情包地址")
     desc: str = Field(..., description="表情包描述")
 
+class TTSConfig(BaseModel):
+    api_url: str = Field("https://api.fish.audio", description="FishAudio API地址")
+    api_key: str = Field(..., description="API Key")
+    reference_id: str = Field(..., description="音色的 Reference ID")
+    speed: float = Field(1.0, description="语速")
+    volume: float = Field(0.0, description="音量")
 
 class Config(BaseModel):
     aitalk_command_start: str = Field("", description="对话触发前缀")
@@ -64,6 +70,11 @@ class Config(BaseModel):
     )
     aitalk_chat_cd: int = Field(5, description="冷却cd,单位为秒")
 
+    aitalk_tts_enabled: bool = Field(False, description="是否启用TTS语音合成")
+    aitalk_tts_config: TTSConfig = Field(
+        default_factory=TTSConfig, description="TTS语音合成配置"
+    )
+
 
 plugin_config = get_plugin_config(Config)  # 加载插件配置
 command_start = plugin_config.aitalk_command_start
@@ -79,5 +90,6 @@ save_user_config = plugin_config.aitalk_save_user_config
 default_available = plugin_config.aitalk_default_available
 default_available_private = plugin_config.aitalk_default_available_private
 chat_cd = plugin_config.aitalk_chat_cd
-# 新增：导出群聊提示词目录配置
 group_prompts_dir = plugin_config.aitalk_group_prompts_dir
+tts_enabled = plugin_config.aitalk_tts_enabled
+tts_config = plugin_config.aitalk_tts_config

@@ -10,24 +10,17 @@ from nonebot.drivers.httpx import httpx
 import base64
 from io import BytesIO
 import json
-import re
 import random
-from .config import reply_when_meme, reply_msg
-from nonebot import logger  # 引入 logger
+import aiofiles
+import pysilk
+from .config import reply_when_meme, reply_msg, tts_config
+from .msg_seg import *
+from nonebot import logger
+from nonebot.utils import run_sync
+from fish_audio_sdk import Session, TTSRequest, Prosody
+import nonebot_plugin_localstore as store
 
-
-class PokeMessage:
-    gid = 0
-    uid = 0
-
-
-class BanUser:
-    # 群号
-    gid = 0
-    # 用户号
-    uid = 0
-    # 禁言时间,单位是秒
-    duration = 0
+session = Session(apikey=tts_config.api_key, base_url=tts_config.api_url)
 
 
 async def send_thinking_msg(
@@ -163,6 +156,21 @@ async def send_formatted_reply(
                     )
             else:  # 私聊不能禁言
                 pass
+        elif isinstance(msg_segment, TTSMessage):
+            try:
+                tts_file = await fish_audio_tts(
+                    text=msg_segment.text,
+                    reference_id=msg_segment.reference_id,
+                    speed=tts_config.speed,
+                    volume=tts_config.volume,
+                )
+                await bot.send(
+                    event,
+                    MessageSegment.record(file=tts_file)
+                )
+            except Exception as e:
+                logger.error(f"发送TTS失败: {e}")
+                await bot.send(event, "[AI说话失败了...]", **current_reply_params)
         # 如果还有其他自定义类型，在这里添加处理逻辑
 
 
@@ -218,3 +226,26 @@ async def url2base64(url):
         response.raise_for_status()  # 确保请求成功
     imgdata = base64.b64encode(response.content).decode("utf-8")
     return imgdata
+
+async def fish_audio_tts(text, reference_id: str = "", speed: float = 1.0, volume: float = 0.0) -> str:
+    # FishAudio 语音合成, 返回silk文件路径
+    cache_dir = store.get_plugin_cache_dir()
+    file_id = random.randint(0,1145141919)
+    pcm_file = cache_dir / f"tts_{file_id}.pcm"
+
+    async with aiofiles.open(pcm_file, "wb") as f:
+        for chunk in session.tts(TTSRequest(
+            reference_id=reference_id,
+            text=text,
+            format="pcm",
+            sample_rate=24000,
+            prosody=Prosody(speed=speed, volume=volume),
+        )):
+            await f.write(chunk)
+
+    silk_file_name = cache_dir / f"tts_{file_id}.silk"
+    silk_file = open(silk_file_name, "wb")
+    await run_sync(pysilk.encode)(open(pcm_file, "rb"), silk_file, sample_rate=24000, bit_rate=24000)
+    silk_file.close()
+
+    return silk_file_name.as_uri()

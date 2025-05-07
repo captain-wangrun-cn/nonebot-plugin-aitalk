@@ -19,7 +19,6 @@ from nonebot.adapters.onebot.v11 import (
 )
 
 require("nonebot_plugin_localstore")
-require("nonebot_plugin_alconna")
 
 import json, time, random
 from .config import *
@@ -27,11 +26,12 @@ from .api import gen
 from .data import *
 from .cd import *
 from .utils import *
+from .msg_seg import *
 
 
 __plugin_meta__ = PluginMetadata(
     name="简易AI聊天",
-    description="简单好用的AI聊天插件。支持多API、图片理解、表情包、提醒、戳一戳等。群聊提示词通过在指定目录创建 {GROUP_ID}.txt 文件进行配置。",
+    description="简单好用的AI聊天插件。支持多API、图片理解、语音合成、表情包、提醒、戳一戳等。群聊提示词通过在指定目录创建 {GROUP_ID}.txt 文件进行配置。",
     usage=(
         "@机器人发起聊天\n"
         "/选择模型 <模型名>\n"
@@ -82,21 +82,26 @@ def format_reply(reply: str | dict) -> list:
     def process_message(msg_dict):  # 参数名修改避免与外部变量冲突
         msg_type = msg_dict.get("type")
         if msg_type == "text":
+            # 纯文本
             return MessageSegment.text(msg_dict.get("content", ""))
         elif msg_type == "at":
+            # 艾特
             return MessageSegment.at(msg_dict.get("uid", 0))
         elif msg_type == "poke":
+            # 戳一戳
             poke = PokeMessage()
             poke.gid = msg_dict.get("gid", 0)
             poke.uid = msg_dict.get("uid", 0)
             return poke
         elif msg_type == "ban":
+            # 禁言
             ban = BanUser()
             ban.gid = msg_dict.get("gid", 0)
             ban.uid = msg_dict.get("uid", 0)
             ban.duration = msg_dict.get("duration", 0)
             return ban
         elif msg_type == "meme":
+            # 表情包
             for meme_item in memes:
                 if meme_item["url"] == msg_dict.get("url"):
                     url = meme_item["url"]
@@ -105,6 +110,12 @@ def format_reply(reply: str | dict) -> list:
                         url = f"file:///{url}"
                     return MessageSegment.image(url)
             return MessageSegment.text("[未知表情包 URL]")
+        elif msg_type == "tts":
+            # 语音合成
+            tts = TTSMessage()
+            tts.text = msg_dict.get("content", "")
+            tts.reference_id = tts_config.reference_id
+            return tts
         else:
             return MessageSegment.text(f"[未知消息类型 {msg_type}]")
 
@@ -527,6 +538,7 @@ async def _(event: GroupMessageEvent | PrivateMessageEvent, bot: Bot):
   - `ban`：禁言用户,在 `uid` 字段中填入用户 ID,并在 `gid` 字段中填入群号,同时在 `duration` 字段中填入禁言时间;
     当你想要调戏用户、活跃气氛、或认为需要对用户适当惩罚时等情景可以使用,此情景禁言时间需控制在60以内;
     若用户发送了含有政治、色情、辱骂等违禁词时,应当使用更严厉更激进的禁言时间,例如1800(30分钟)或3600(1小时)甚至更长。
+  {'- `tts`：语音合成，发送语音消息，需要在 `content` 字段中填入说话内容。' if tts_enabled else ''}
 
 可用的表情包列表：
 {memes_msg_list_str}
@@ -548,6 +560,7 @@ async def _(event: GroupMessageEvent | PrivateMessageEvent, bot: Bot):
         {{ "type": "meme", "url": "表情包URL" }},
         {{ "type": "poke", "uid": "11111", "gid": "1111111" }},
         {{ "type": "ban", "uid": "11111", "gid": "1111111", "duration": 8 }}
+        {'- {{ "type": "tts", "content": "有什么我可以帮你的吗？" }}' if tts_enabled else ''}
     ],
     "reply": true,
     "msg_id": "1234567890"
