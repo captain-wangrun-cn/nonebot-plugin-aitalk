@@ -217,10 +217,15 @@ aitalk_group_prompts_dir = "./aitalk_config/group_prompts"
 
 #### 多群自定义提示词参考配置
 <img src="imgs/Snipaste_2025-05-06_23-17-39.png">
-## 🍟参考
+
+### 🍟参考
 [nonebot-plugin-llmchat](https://github.com/FuQuan233/nonebot-plugin-llmchat) 参考了部分代码以及prompt
 
 ## 📃 更新日志
+### 2.4.21（2025.05.07）
+- 🆕新增分群不同提示词功能
+- 🐛其他中量代码优化[PR#11]
+- (https://github.com/captain-wangrun-cn/nonebot-plugin-aitalk/pull/11)
 ### 2.3.20（2025.04.01）
 - 🐛尝试修复思维链问题(#10)(https://github.com/captain-wangrun-cn/nonebot-plugin-aitalk/issues/10)
 - 🆕添加了模型描述，选择模型时发送给用户
