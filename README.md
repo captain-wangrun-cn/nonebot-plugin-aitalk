@@ -98,7 +98,9 @@ _✨ 简单好用的AI聊天插件 ✨_
 |     aitalk_save_user_config      | bool  |  否   |                                             true                                             |                               是否保存用户配置，关闭nonebot时将会保存用户所选模型，对话内容等，启动时读取                               |
 |     aitalk_default_available     | bool  |  否   |                                             true                                             |                                           是否默认允许群聊使用，为false时需要手动使用指令开启                                           |
 | aitalk_default_available_private | bool  |  否   |                                             true                                             |                                           是否默认允许私聊使用，为false时需要手动使用指令开启                                           |
-|          aitalk_chat_cd          |  int  |  否   |                                              5                                               |                                                             聊天cd，单位秒                                                              |
+|          aitalk_chat_cd          |  int  |  否   |                                              5                                               |                                                             聊天cd，单位秒       
+|          aitalk_tts_enabled          |  bool  |  否   |                                              false                                               |                                                             是否开启语音合成  |
+|          aitalk_tts_config          |  bool  |  否   |                                              false                                               |                                                             语音合成配置，详细请看下方  |
 
 
 aitalk_api_list（api列表）格式：
