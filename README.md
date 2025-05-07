@@ -233,6 +233,12 @@ aitalk_tts_config = '
 [nonebot-plugin-llmchat](https://github.com/FuQuan233/nonebot-plugin-llmchat) 参考了部分代码以及prompt
 
 
+## 贡献者
+<a href="https://github.com/eryajf/learn-github/graphs/contributors">
+  <img src="https://contrib.rocks/image?repo=captain-wangrun-cn/nonebot-plugin-aitalk" />
+</a>
+
+
 ## 📃 更新日志
 ### 3.5.23（2025.05.07）
 - 🆕图片输入支持引用带有图片的消息[PR#12](https://github.com/captain-wangrun-cn/nonebot-plugin-aitalk/pull/12)
