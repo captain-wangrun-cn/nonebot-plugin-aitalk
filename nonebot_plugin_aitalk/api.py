@@ -3,6 +3,7 @@ from .config import plugin_config
 from typing import Tuple
 import re
 
+
 def extract_thinking_content(text):
     # 提取思维链内容和正文内容
     pattern = r"<think>(.*?)</think>"  # 匹配 <think> 标签及其内容
@@ -17,11 +18,9 @@ def extract_thinking_content(text):
         # 如果没有匹配到 <think> 标签，返回 None
         return None, text.strip()
 
+
 async def gen(
-        messages: dict, 
-        model_name: str, 
-        api_key: str, 
-        api_url: str
+    messages: dict, model_name: str, api_key: str, api_url: str
 ) -> Tuple[str | None, str | None]:
     client = AsyncOpenAI(base_url=api_url, api_key=api_key)
 
@@ -32,10 +31,10 @@ async def gen(
         temperature=plugin_config.aitalk_completion_config.temperature,
         top_p=plugin_config.aitalk_completion_config.top_p,
     )
-    
+
     message = completion.choices[0].message.content
     reasoning = ""
-    
+
     if "reasoning_content" in completion.choices[0].message.model_extra:
         reasoning = completion.choices[0].message.model_extra["reasoning_content"]
     elif "<think>" in message and "</think>" in message:

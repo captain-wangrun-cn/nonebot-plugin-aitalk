@@ -74,22 +74,23 @@ _✨ 简单好用的AI聊天插件 ✨_
 
 在 nonebot2 项目的`.env`文件中添加下表中的必填配置
 
-| 配置项          | 类型   | 必填 | 默认值 | 说明                  |
-|:------------:|:----:|:---:|:---:|:-------------------:|
-| aitalk_api_list | list | 是 | [ ] | API列表，支持多个API，格式请往下看 |
-| aitalk_available_memes | list | 是 | [ ] | AI可以发送的表情包，格式请往下看 |
-| aitalk_command_start | str | 否  | ""  | 对话触发前缀，例如“/对话”，类似on_command，为空时直接艾特即可触发 |
-| aitalk_completion_config | list | 否 | [ ] | 生成配置，格式请往下看 |
-| aitalk_default_prompt | str | 否 | "你的回答应该尽量简洁、幽默、可以使用一些语气词、颜文字。你应该拒绝回答任何政治相关的问题。" | 默认提示词 |
-| aitalk_default_prompt_file | str | 否 | "" | 默认提示词文件路径，与提示词二选一，优先使用文件。请注意将windows系统路径中的\替换成\\ |
-| aitalk_reply_when_meme | bool | 否 | true | 当只有表情包时，是否回复消息 |
-| aitalk_reply | bool | 否 | true | 是否回复消息 |
-| aitalk_max_split_length | int | 否 | 5 | 最大分割长度，将会在prompt中告诉ai，回复的消息数量不要大于这个值，可能不起作用 |
-| aitalk_max_context_length | int | 否 | 20 | 最长上下文消息数量，超过这个数量时，将会逐个抛弃最早的一条消息。这个数值包括设定消息 |
-| aitalk_save_user_config | bool | 否 | true | 是否保存用户配置，关闭nonebot时将会保存用户所选模型，对话内容等，启动时读取 |
-| aitalk_default_available | bool | 否 | true | 是否默认允许群聊使用，为false时需要手动使用指令开启 |
-| aitalk_default_available_private | bool | 否 | true | 是否默认允许私聊使用，为false时需要手动使用指令开启 |
-| aitalk_chat_cd | int | 否 | 5 | 聊天cd，单位秒 |
+|              配置项              | 类型  | 必填  |                                            默认值                                            |                                                                  说明                                                                   |
+| :------------------------------: | :---: | :---: | :------------------------------------------------------------------------------------------: | :-------------------------------------------------------------------------------------------------------------------------------------: |
+|         aitalk_api_list          | list  |  是   |                                             [ ]                                              |                                                   API列表，支持多个API，格式请往下看                                                    |
+|      aitalk_available_memes      | list  |  是   |                                             [ ]                                              |                                                    AI可以发送的表情包，格式请往下看                                                     |
+|       aitalk_command_start       |  str  |  否   |                                              ""                                              |                                    对话触发前缀，例如“/对话”，类似on_command，为空时直接艾特即可触发                                    |
+|     aitalk_completion_config     | list  |  否   |                                             [ ]                                              |                                                         生成配置，格式请往下看                                                          |
+|      aitalk_default_prompt       |  str  |  否   | "你的回答应该尽量简洁、幽默、可以使用一些语气词、颜文字。你应该拒绝回答任何政治相关的问题。" |                                                               默认提示词                                                                |
+|    aitalk_default_prompt_file    |  str  |  否   |                                              ""                                              |                         默认提示词文件路径，与提示词二选一，优先使用文件。请注意将windows系统路径中的\替换成\\                          |
+|     aitalk_group_prompts_dir     |  str  |  否   |                               "./aitalk_config/group_prompts"                                | 分群提示词文件路径，在该路径下存放"群号.txt"文件，(例如: ./aitalk_config/group_prompts/12345.txt)。请注意将windows系统路径中的\替换成\\ |
+|      aitalk_reply_when_meme      | bool  |  否   |                                             true                                             |                                                      当只有表情包时，是否回复消息                                                       |
+|           aitalk_reply           | bool  |  否   |                                             true                                             |                                                              是否回复消息                                                               |
+|     aitalk_max_split_length      |  int  |  否   |                                              5                                               |                             最大分割长度，将会在prompt中告诉ai，回复的消息数量不要大于这个值，可能不起作用                              |
+|    aitalk_max_context_length     |  int  |  否   |                                              20                                              |                          最长上下文消息数量，超过这个数量时，将会逐个抛弃最早的一条消息。这个数值包括设定消息                           |
+|     aitalk_save_user_config      | bool  |  否   |                                             true                                             |                               是否保存用户配置，关闭nonebot时将会保存用户所选模型，对话内容等，启动时读取                               |
+|     aitalk_default_available     | bool  |  否   |                                             true                                             |                                           是否默认允许群聊使用，为false时需要手动使用指令开启                                           |
+| aitalk_default_available_private | bool  |  否   |                                             true                                             |                                           是否默认允许私聊使用，为false时需要手动使用指令开启                                           |
+|          aitalk_chat_cd          |  int  |  否   |                                              5                                               |                                                             聊天cd，单位秒                                                              |
 
 
 aitalk_api_list（api列表）格式：
@@ -195,24 +196,27 @@ aitalk_available_memes = '
 ]
 '
 aitalk_default_prompt_file = "D:\\prompt\\日富美.txt"
+aitalk_group_prompts_dir = "./aitalk_config/group_prompts"
 ```
 
 
 
 ## 🎉 使用
 ### 指令表
-| 指令 | 权限 | 需要@ | 范围 | 说明 |
-|:-----:|:----:|:----:|:----:|:----:|
-| @机器人 | 群聊 | 是 | 群聊 | 艾特机器人即可聊天 |
-| 模型选择 | 群聊 | 否 | 群聊 | 选择模型 |
-| ai对话 开启 | 管理员+ | 否 | 群聊 | 开启本群ai对话 |
-| ai对话 关闭 | 管理员+ | 否 | 群聊 | 关闭本群ai对话 |
-| 清空聊天记录 | 群聊 | 否 | 群聊 | 清空对话记录 |
+|     指令     |  权限   | 需要@ | 范围  |        说明        |
+| :----------: | :-----: | :---: | :---: | :----------------: |
+|   @机器人    |  群聊   |  是   | 群聊  | 艾特机器人即可聊天 |
+|   模型选择   |  群聊   |  否   | 群聊  |      选择模型      |
+| ai对话 开启  | 管理员+ |  否   | 群聊  |   开启本群ai对话   |
+| ai对话 关闭  | 管理员+ |  否   | 群聊  |   关闭本群ai对话   |
+| 清空聊天记录 |  群聊   |  否   | 群聊  |    清空对话记录    |
 ### 效果图
 <img src="imgs/QQ20250222-232704.png">
 <img src="imgs/QQ20250222-232730.png">
 <img src="imgs/QQ20250222-232813.png">
 
+#### 多群自定义提示词参考配置
+<img src="imgs/Snipaste_2025-05-06_23-17-39.png">
 ## 🍟参考
 [nonebot-plugin-llmchat](https://github.com/FuQuan233/nonebot-plugin-llmchat) 参考了部分代码以及prompt
 
