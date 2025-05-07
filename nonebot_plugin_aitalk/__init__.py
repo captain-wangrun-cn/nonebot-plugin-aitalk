@@ -410,7 +410,8 @@ async def _(event: GroupMessageEvent | PrivateMessageEvent, bot: Bot):
             model_name_val = model_conf_item.model_name
             send_thinking_enabled = model_conf_item.send_thinking
             if model_conf_item.image_input:  # 如果模型支持图片输入
-                images_base64 = await get_images(event)  # 从消息中提取图片
+                # --- 修改调用 get_images 的地方，传入 bot ---
+                images_base64 = await get_images(event, bot)
             break
 
     if not selected_model_config:
