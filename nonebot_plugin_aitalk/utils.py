@@ -95,17 +95,11 @@ async def send_formatted_reply(
         elif isinstance(msg_segment, PokeMessage):
             try:
                 if isinstance(event, GroupMessageEvent):
-                    await bot.send_group_msg(
-                        group_id=msg_segment.gid,
-                        message=MessageSegment.poke(qq=msg_segment.uid),
+                    await bot.group_poke(
+                        group_id=msg_segment.gid, user_id=msg_segment.uid
                     )
-                else:  # 私聊戳一戳可能需要特定API或不支持，这里假设发送普通消息提示
-                    logger.info(
-                        f"尝试在私聊中发送戳一戳给 {msg_segment.uid} (gid: {msg_segment.gid})，通常不支持。"
-                    )
-                    await bot.send_private_msg(
-                        user_id=msg_segment.uid, message="[AI想戳戳你]"
-                    )
+                else:
+                    await bot.friend_poke(user_id=msg_segment.uid)
             except Exception as e:
                 logger.error(f"发送戳一戳失败: {e}")
                 await bot.send(event, "[AI戳人失败了...]", **current_reply_params)
