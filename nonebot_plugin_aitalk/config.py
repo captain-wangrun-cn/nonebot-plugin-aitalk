@@ -26,12 +26,14 @@ class MemeConfig(BaseModel):
     url: str = Field(..., description="表情包地址")
     desc: str = Field(..., description="表情包描述")
 
+
 class TTSConfig(BaseModel):
     api_url: str = Field("https://api.fish.audio", description="FishAudio API地址")
     api_key: str = Field(..., description="API Key")
     reference_id: str = Field(..., description="音色的 Reference ID")
     speed: float = Field(1.0, description="语速")
     volume: float = Field(0.0, description="音量")
+
 
 class Config(BaseModel):
     aitalk_command_start: str = Field("", description="对话触发前缀")
@@ -82,6 +84,27 @@ class Config(BaseModel):
         1.2, description="发送多条消息时，每条之间的最大延迟（秒）"
     )
 
+    # 主动回复功能配置
+    aitalk_active_reply_enabled: bool = Field(False, description="是否启用主动回复功能")
+    aitalk_active_reply_keywords: list[str] = Field(
+        [],
+        description="主动回复的触发关键字列表, 例如 ['问题', '请问', '大佬']",
+    )
+    aitalk_active_reply_probability: float = Field(
+        0.3, description="满足关键字后，触发主动回复的概率 (0.0 到 1.0)"
+    )
+    aitalk_active_reply_no_keyword_probability: float = Field(
+        0.05,
+        description="未满足关键字时，触发主动回复的概率 (0.0 到 1.0)，建议设置较低的值",
+    )
+    aitalk_active_reply_context_timeout: int = Field(
+        300, description="机器人主动回复后，上下文的有效时间（秒）"
+    )
+    aitalk_active_reply_max_unrelated_followups: int = Field(  # 新增配置项
+        3,
+        description="在主动回复上下文中，AI连续判断N次与追问无关后，关闭本次主动回复会话 (0表示不启用此功能)",
+    )
+
 
 plugin_config = get_plugin_config(Config)  # 加载插件配置
 command_start = plugin_config.aitalk_command_start
@@ -100,6 +123,17 @@ chat_cd = plugin_config.aitalk_chat_cd
 group_prompts_dir = plugin_config.aitalk_group_prompts_dir
 tts_enabled = plugin_config.aitalk_tts_enabled
 tts_config = plugin_config.aitalk_tts_config
-# 新增：加载消息发送延迟配置
 message_send_delay_min = plugin_config.aitalk_message_send_delay_min
 message_send_delay_max = plugin_config.aitalk_message_send_delay_max
+
+# 主动回复相关配置加载
+active_reply_enabled = plugin_config.aitalk_active_reply_enabled
+active_reply_keywords = plugin_config.aitalk_active_reply_keywords
+active_reply_probability = plugin_config.aitalk_active_reply_probability
+active_reply_no_keyword_probability = (
+    plugin_config.aitalk_active_reply_no_keyword_probability
+)
+active_reply_context_timeout = plugin_config.aitalk_active_reply_context_timeout
+active_reply_max_unrelated_followups = (
+    plugin_config.aitalk_active_reply_max_unrelated_followups
+)  # 新增加载
