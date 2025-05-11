@@ -257,6 +257,8 @@ aitalk_active_reply_no_keyword_probability = 0.05
 
 
 ## 📃 更新日志
+### 3.4.24（2025.05.08）
+- 🐛修复戳一戳失败的问题[PR#13](https://github.com/captain-wangrun-cn/nonebot-plugin-aitalk/pull/13)
 ### 3.5.23（2025.05.07）
 - 🆕图片输入支持引用带有图片的消息[PR#12](https://github.com/captain-wangrun-cn/nonebot-plugin-aitalk/pull/12)
 - 🆕支持多图输入[PR#12](https://github.com/captain-wangrun-cn/nonebot-plugin-aitalk/pull/12)
