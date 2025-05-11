@@ -74,6 +74,13 @@ class Config(BaseModel):
     aitalk_tts_config: TTSConfig = Field(
         default_factory=TTSConfig, description="TTS语音合成配置"
     )
+    # 新增：消息发送延迟配置
+    aitalk_message_send_delay_min: float = Field(
+        0.2, description="发送多条消息时，每条之间的最小延迟（秒），设为0则不延迟"
+    )
+    aitalk_message_send_delay_max: float = Field(
+        1.2, description="发送多条消息时，每条之间的最大延迟（秒）"
+    )
 
 
 plugin_config = get_plugin_config(Config)  # 加载插件配置
@@ -93,3 +100,6 @@ chat_cd = plugin_config.aitalk_chat_cd
 group_prompts_dir = plugin_config.aitalk_group_prompts_dir
 tts_enabled = plugin_config.aitalk_tts_enabled
 tts_config = plugin_config.aitalk_tts_config
+# 新增：加载消息发送延迟配置
+message_send_delay_min = plugin_config.aitalk_message_send_delay_min
+message_send_delay_max = plugin_config.aitalk_message_send_delay_max

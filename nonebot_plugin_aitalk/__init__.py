@@ -518,13 +518,14 @@ async def _(event: GroupMessageEvent | PrivateMessageEvent, bot: Bot):
 
 你的回复需要遵守以下规则：
 - 不要使用 Markdown 或 HTML 格式。聊天软件不支持解析，换行请用换行符。
-- 以普通人的口吻发送消息，每条消息尽量简短，可以分多条回复，但请控制在 {max_split_length} 条消息以内。
+- 以普通人的口吻发送消息，每条消息适当简短，但对于某些说明解释性的回复以及你认为需要适中篇幅介绍的回答，考虑使用较长的消息。
+- 纯文本消息可以分多条回复，但请控制在 {max_split_length} 条消息以内。戳一戳,表情包和禁言等特殊消息不受限制。
 - 如果需要发送代码，请用单独的一条消息发送，不要分段。
 - 使用发送者的昵称称呼对方。第一次回复时可以礼貌问候，但后续无需重复问候。
 - 如果需要思考，直接用普通文本表达，不要用 JSON 格式。
 - 不要在思考内容中提到 JSON 或其他格式要求。
 
-以下是你的性格设定，如果设定中提到让你扮演某个人或有名字，则优先使用设定中的名字：
+以下是你的性格设定，如果设定中提到让你扮演某个人或有名字，则优先使用设定中的名字;如果设定中要求了消息的文本长度，则使用设定中的文本长度要求：
 {character_prompt_content}
 你的正文回复需要统一使用 JSON 格式，所有回复内容将包裹在一个字典里。字典中的 `messages` 字段代表你的回复，你还可以根据情景向字典里添加其他参数。可用的参数如下：
 - `reply`：布尔值，是否回复用户的消息。如果是回复，请在 `msg_id` 字段内填入消息 ID。注意:私聊消息请不要回复。
@@ -572,13 +573,173 @@ async def _(event: GroupMessageEvent | PrivateMessageEvent, bot: Bot):
             {"role": "system", "content": system_prompt_text}
         ]
 
+    # --- 新增：获取被回复消息的文本 ---
+    replied_text_info = ""
+    if event.reply:  # 检查当前消息是否是回复消息
+        original_message_id_to_log = "N/A"  # 用于日志记录的变量
+        try:
+            if hasattr(event.reply, "message_id"):
+                original_message_id_to_log = event.reply.message_id
+            else:
+                raise AttributeError("event.reply 对象没有属性 'message_id'")
+
+            msg_id_val = event.reply.message_id  # 获取 message_id 的原始值
+
+            if isinstance(msg_id_val, str):
+                # 如果是字符串，尝试去除首尾空格再转换
+                cleaned_id_str = msg_id_val.strip()
+                try:
+                    original_message_id = int(cleaned_id_str)
+                except ValueError as e_conv:
+                    # 记录更详细的转换失败日志
+                    logger.error(
+                        f"AITalk Error: 无法将清理后的字符串ID '{cleaned_id_str}' (原始: '{msg_id_val}') 转换为整数: {e_conv}"
+                    )
+                    raise  # 重新抛出异常，让外层捕获
+            elif isinstance(msg_id_val, int):
+                original_message_id = msg_id_val  # 如果已经是整数，直接使用
+            else:
+                # 如果类型不是 str 或 int，记录错误并抛出异常
+                logger.error(
+                    f"AITalk Error: event.reply.message_id 的类型不是预期的 str 或 int，而是 {type(msg_id_val)}。值: {repr(msg_id_val)}"
+                )
+                raise TypeError(f"event.reply.message_id 类型错误: {type(msg_id_val)}")
+
+            logger.debug(
+                f"AITalk Debug: 尝试使用 message_id: {original_message_id} (类型: {type(original_message_id)}) 调用 bot.get_msg"
+            )
+            # 调用 bot.get_msg API 获取原始消息的详细数据
+            original_msg_data = await bot.get_msg(message_id=original_message_id)
+
+            # --- 修改开始：更稳健地处理 original_msg_data["message"] ---
+            if original_msg_data and "message" in original_msg_data:
+                raw_message_content = original_msg_data["message"]
+                processed_segments = []
+                if isinstance(raw_message_content, str):
+                    # 如果是字符串，让 OneBotMessage 解析 (例如 CQ 码)
+                    # 这会生成一个 Message 对象，它是 MessageSegment 的可迭代对象
+                    temp_msg_obj = OneBotMessage(raw_message_content)
+                    for (
+                        seg
+                    ) in temp_msg_obj:  # 从 Message 对象中提取实际的 MessageSegment
+                        processed_segments.append(seg)
+                elif isinstance(raw_message_content, list):
+                    # 如果是列表，假定它是消息段字典的列表
+                    for seg_dict in raw_message_content:
+                        if (
+                            isinstance(seg_dict, dict)
+                            and "type" in seg_dict
+                            and "data" in seg_dict
+                        ):
+                            try:
+                                processed_segments.append(
+                                    MessageSegment(
+                                        type=seg_dict["type"], data=seg_dict["data"]
+                                    )
+                                )
+                            except (
+                                Exception
+                            ) as e_seg_create:  # 捕获创建MessageSegment时可能发生的错误
+                                logger.warning(
+                                    f"AITalk Warning: 从字典 {seg_dict} 创建 MessageSegment 失败: {e_seg_create}. 将其作为文本处理。"
+                                )
+                                processed_segments.append(
+                                    MessageSegment.text(str(seg_dict))
+                                )
+                        else:
+                            logger.warning(
+                                f"AITalk Warning: 消息列表中的项目不是有效的消息段字典: {str(seg_dict)[:100]}. 将其作为文本处理。"
+                            )
+                            processed_segments.append(
+                                MessageSegment.text(str(seg_dict))
+                            )  # Fallback
+                elif isinstance(raw_message_content, dict):
+                    # 如果是单个消息段字典
+                    if "type" in raw_message_content and "data" in raw_message_content:
+                        try:
+                            processed_segments.append(
+                                MessageSegment(
+                                    type=raw_message_content["type"],
+                                    data=raw_message_content["data"],
+                                )
+                            )
+                        except (
+                            Exception
+                        ) as e_seg_create:  # 捕获创建MessageSegment时可能发生的错误
+                            logger.warning(
+                                f"AITalk Warning: 从单个字典 {raw_message_content} 创建 MessageSegment 失败: {e_seg_create}. 将其作为文本处理。"
+                            )
+                            processed_segments.append(
+                                MessageSegment.text(str(raw_message_content))
+                            )
+                    else:
+                        logger.warning(
+                            f"AITalk Warning: 单个消息字典不是有效的消息段字典: {str(raw_message_content)[:100]}. 将其作为文本处理。"
+                        )
+                        processed_segments.append(
+                            MessageSegment.text(str(raw_message_content))
+                        )  # Fallback
+                else:
+                    # 处理未预期的消息格式
+                    logger.error(
+                        f"AITalk Error: 来自 bot.get_msg 的消息格式未预期: {type(raw_message_content)}. 内容: {str(raw_message_content)[:200]}. 将其作为文本处理。"
+                    )
+                    processed_segments.append(
+                        MessageSegment.text(str(raw_message_content))
+                    )  # Fallback
+
+                original_message_obj = OneBotMessage(
+                    processed_segments
+                )  # 用处理过的 segments 列表构造 Message 对象
+                # --- 修改结束 ---
+
+                original_text = (
+                    original_message_obj.extract_plain_text().strip()
+                )  # 提取纯文本并去除首尾空白
+                # 获取原始消息发送者的昵称，如果获取不到则显示 "未知用户"
+                original_sender_nickname = original_msg_data.get("sender", {}).get(
+                    "nickname", "未知用户"
+                )
+                if original_text:  # 如果原始消息文本不为空
+                    # 格式化被回复消息的文本信息，用于后续添加到用户提示中
+                    replied_text_info = f"""- 用户回复了【{original_sender_nickname}】的消息: "{original_text}"
+    """
+            else:
+                logger.warning(
+                    f"AITalk Warning: bot.get_msg 返回的数据不完整或没有 'message' 字段。原始消息ID: {original_message_id}, 返回: {original_msg_data}"
+                )
+
+        except ValueError as e_val:  # 处理上面 int() 转换失败的情况
+            logger.warning(
+                f"AITalk Warning: 在处理被回复消息时发生 ValueError。被回复消息ID (原始记录值): '{original_message_id_to_log}'. 错误: {e_val}",
+                exc_info=True,
+            )
+        except TypeError as e_type:  # 处理上面类型检查失败的情况
+            logger.warning(
+                f"AITalk Warning: 在处理被回复消息时发生 TypeError。被回复消息ID (原始记录值): '{original_message_id_to_log}'. 错误: {e_type}",
+                exc_info=True,
+            )
+        except AttributeError as e_attr:  # 处理 event.reply 没有 message_id 的情况
+            logger.warning(
+                f"AITalk Warning: 在处理被回复消息时发生 AttributeError: {e_attr}",
+                exc_info=True,
+            )
+        except Exception as e:  # 处理其他获取或解析被回复消息时可能发生的异常
+            logger.warning(
+                f"AITalk Warning: 获取或解析被回复消息文本时发生未知错误。被回复消息ID (原始记录值): '{original_message_id_to_log}'. 错误: {e}",
+                exc_info=True,
+            )
+    # --- 新增逻辑结束 ---
+
     # 用户信息
+    # 在用户提示中加入被回复消息的文本（如果存在）
     user_prompt_text = f"""
     - 用户昵称：{event.sender.nickname}
     - 用户QQ号: {event.user_id}
     - 消息时间：{time.strftime("%Y-%m-%d %H:%M:%S",time.localtime(event.time))}
     - 消息id: {str(event.message_id)}
     - 群号: {str(event.group_id) if isinstance(event,GroupMessageEvent) else "这是一条私聊消息"}
+    {replied_text_info}
     - 用户说：{event.get_plaintext()}
     """
 
@@ -619,7 +780,7 @@ async def _(event: GroupMessageEvent | PrivateMessageEvent, bot: Bot):
 
         if not success:
             await handler.send(err_msg)
-            
+
             if user_config[chat_type][id_key]["messages"][-1].get("role") == "user":
                 user_config[chat_type][id_key]["messages"].pop()  # 移除对应的user消息
 

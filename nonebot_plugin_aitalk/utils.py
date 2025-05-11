@@ -13,12 +13,18 @@ import json
 import random
 import aiofiles
 import pysilk
-from .config import reply_when_meme, reply_msg, tts_config
+from .config import (
+    reply_when_meme,
+    reply_msg,
+    tts_config,
+    plugin_config,
+)  # 导入 plugin_config
 from .msg_seg import *
 from nonebot import logger
 from nonebot.utils import run_sync
 from fish_audio_sdk import Session, TTSRequest, Prosody
 import nonebot_plugin_localstore as store
+import asyncio  # 导入 asyncio
 
 session = Session(apikey=tts_config.api_key, base_url=tts_config.api_url)
 
@@ -78,7 +84,17 @@ async def send_formatted_reply(
             # 但如果需要精确回复特定消息，则需要适配器支持和正确传递
         # 私聊通常不需要 reply_message=True，直接发送即可
 
-    for msg_segment in formatted_reply:  # Renamed 'msg' to 'msg_segment'
+    for i, msg_segment in enumerate(formatted_reply):  # Renamed 'msg' to 'msg_segment'
+        # 新增：消息发送延迟逻辑
+        if i > 0:  # 如果不是第一条消息段
+            min_delay = plugin_config.aitalk_message_send_delay_min
+            max_delay = plugin_config.aitalk_message_send_delay_max
+            if min_delay >= 0 and max_delay > min_delay:  # 仅当配置的延迟范围有效时
+                delay = random.uniform(min_delay, max_delay)
+                if delay > 0:  # 仅当计算出的延迟大于0时执行
+                    logger.debug(f"AITalk: 延迟下一条消息段 {delay:.2f} 秒。")
+                    await asyncio.sleep(delay)
+
         current_reply_params = reply_params.copy()  # 每次发送前复制，避免互相影响
 
         if isinstance(msg_segment, MessageSegment):

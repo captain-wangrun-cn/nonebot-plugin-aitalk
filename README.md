@@ -77,10 +77,10 @@ _✨ 简单好用的AI聊天插件 ✨_
 
 ### 必填项
 
-|              配置项              | 类型  | 必填  |                                            默认值                                            |                                                                  说明                                                                   |
-| :------------------------------: | :---: | :---: | :------------------------------------------------------------------------------------------: | :-------------------------------------------------------------------------------------------------------------------------------------: |
-|         aitalk_api_list          | list  |  是   |                                             [ ]                                              |                                                   API列表，支持多个API，格式请往下看                                                    |
-|      aitalk_available_memes      | list  |  是   |                                             [ ]                                              |                                                    AI可以发送的表情包，格式请往下
+|         配置项         | 类型  | 必填  | 默认值 |                说明                |
+| :--------------------: | :---: | :---: | :----: | :--------------------------------: |
+|    aitalk_api_list     | list  |  是   |  [ ]   | API列表，支持多个API，格式请往下看 |
+| aitalk_available_memes | list  |  是   |  [ ]   |   AI可以发送的表情包，格式请往下   |
 
 ### 选填项
 
@@ -98,10 +98,12 @@ _✨ 简单好用的AI聊天插件 ✨_
 |     aitalk_save_user_config      | bool  |  否   |                                             true                                             |                               是否保存用户配置，关闭nonebot时将会保存用户所选模型，对话内容等，启动时读取                               |
 |     aitalk_default_available     | bool  |  否   |                                             true                                             |                                           是否默认允许群聊使用，为false时需要手动使用指令开启                                           |
 | aitalk_default_available_private | bool  |  否   |                                             true                                             |                                           是否默认允许私聊使用，为false时需要手动使用指令开启                                           |
-|          aitalk_chat_cd          |  int  |  否   |                                              5                                               |                                                             聊天cd，单位秒       
-|          aitalk_tts_enabled          |  bool  |  否   |                                              false                                               |                                                             是否开启语音合成  |
-|          aitalk_tts_config          |  bool  |  否   |                                              false                                               |                                                             语音合成配置，详细请看下方  |
-
+|          aitalk_chat_cd          |  int  |  否   |                                              5                                               |                                                             聊天cd，单位秒                                                              |
+|        aitalk_tts_enabled        | bool  |  否   |                                            false                                             |                                                            是否开启语音合成                                                             |
+|        aitalk_tts_config         | bool  |  否   |                                            false                                             |                                                       语音合成配置，详细请看下方                                                        |
+|        aitalk_tts_config         | bool  |  否   |                                            false                                             |                                                       语音合成配置，详细请看下方                                                        |
+|  aitalk_message_send_delay_min   | float |  否   |                                             0.2                                              |                                         发送多条消息时，每条之间的最小延迟（秒），设为0则不延迟                                         |
+|  aitalk_message_send_delay_max   | float |  否   |                                             1.2                                              |                                         发送多条消息时，每条之间的最大延迟（秒），设为0则不延迟                                         |
 
 aitalk_api_list（api列表）格式：
 ```json
