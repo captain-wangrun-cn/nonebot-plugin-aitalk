@@ -1,5 +1,6 @@
 from pydantic import BaseModel, Field
 from nonebot import get_plugin_config
+from typing import Dict  # 新增导入 Dict
 
 
 class ModelConfig(BaseModel):
@@ -33,6 +34,17 @@ class TTSConfig(BaseModel):
     reference_id: str = Field(..., description="音色的 Reference ID")
     speed: float = Field(1.0, description="语速")
     volume: float = Field(0.0, description="音量")
+
+
+# 新增：分群主动回复配置模型
+class GroupActiveReplyConfig(BaseModel):
+    keywords: list[str] = Field(description="该群聊的主动回复触发关键字列表")
+    probability: float = Field(
+        description="该群聊满足关键字后，触发主动回复的概率 (0.0 到 1.0)"
+    )
+    no_keyword_probability: float = Field(
+        description="该群聊未满足关键字时，触发主动回复的概率 (0.0 到 1.0)"
+    )
 
 
 class Config(BaseModel):
@@ -88,14 +100,15 @@ class Config(BaseModel):
     aitalk_active_reply_enabled: bool = Field(False, description="是否启用主动回复功能")
     aitalk_active_reply_keywords: list[str] = Field(
         [],
-        description="主动回复的触发关键字列表, 例如 ['问题', '请问', '大佬']",
+        description="全局主动回复的触发关键字列表, 例如 ['问题', '请问', '大佬']",  # 修改描述以区分全局
     )
     aitalk_active_reply_probability: float = Field(
-        0.3, description="满足关键字后，触发主动回复的概率 (0.0 到 1.0)"
+        0.3,
+        description="全局满足关键字后，触发主动回复的概率 (0.0 到 1.0)",  # 修改描述以区分全局
     )
     aitalk_active_reply_no_keyword_probability: float = Field(
         0.05,
-        description="未满足关键字时，触发主动回复的概率 (0.0 到 1.0)，建议设置较低的值",
+        description="全局未满足关键字时，触发主动回复的概率 (0.0 到 1.0)，建议设置较低的值",  # 修改描述以区分全局
     )
     aitalk_active_reply_context_timeout: int = Field(
         300, description="机器人主动回复后，上下文的有效时间（秒）"
@@ -103,6 +116,11 @@ class Config(BaseModel):
     aitalk_active_reply_max_unrelated_followups: int = Field(  # 新增配置项
         3,
         description="在主动回复上下文中，AI连续判断N次与追问无关后，关闭本次主动回复会话 (0表示不启用此功能)",
+    )
+    # 新增：分群主动回复配置
+    aitalk_group_active_reply_configs: Dict[str, GroupActiveReplyConfig] = Field(
+        default_factory=dict,
+        description='分群独立主动回复配置。键为群号字符串，值为该群的特定配置。例如：\'{"12345": {"keywords": ["help", "support"], "probability": 0.8, "no_keyword_probability": 0.2}}\'',
     )
 
 
@@ -128,12 +146,16 @@ message_send_delay_max = plugin_config.aitalk_message_send_delay_max
 
 # 主动回复相关配置加载
 active_reply_enabled = plugin_config.aitalk_active_reply_enabled
-active_reply_keywords = plugin_config.aitalk_active_reply_keywords
-active_reply_probability = plugin_config.aitalk_active_reply_probability
+active_reply_keywords = plugin_config.aitalk_active_reply_keywords  # 这是全局默认值
+active_reply_probability = (
+    plugin_config.aitalk_active_reply_probability
+)  # 这是全局默认值
 active_reply_no_keyword_probability = (
-    plugin_config.aitalk_active_reply_no_keyword_probability
+    plugin_config.aitalk_active_reply_no_keyword_probability  # 这是全局默认值
 )
 active_reply_context_timeout = plugin_config.aitalk_active_reply_context_timeout
 active_reply_max_unrelated_followups = (
     plugin_config.aitalk_active_reply_max_unrelated_followups
-)  # 新增加载
+)
+# 新增：加载分群主动回复配置
+group_active_reply_configs = plugin_config.aitalk_group_active_reply_configs
