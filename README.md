@@ -257,6 +257,15 @@ aitalk_active_reply_no_keyword_probability = 0.05
 
 
 ## 📃 更新日志
+### 3.8.25（2025.05.11）
+- 🆕支持读取引用消息中的文本
+- 🆕增加配置，允许AI在回复多条消息时增加随机延迟
+- 🆕增加配置，允许在检测到关键词时询问AI，由AI自主决定是否需要主动发言回复用户。
+- 🆕增加独立的JSON修复功能，用于在主聊天AI返回的JSON格式错误后，尝试使用独立对话AI自动修复该JSON格式。
+- 🔧更新README.md中的配置项
+- [PR#14](https://github.com/captain-wangrun-cn/nonebot-plugin-aitalk/pull/14)
+### 3.4.24（2025.05.08）
+- 🐛修复戳一戳失败的问题[PR#13](https://github.com/captain-wangrun-cn/nonebot-plugin-aitalk/pull/13)
 ### 3.5.23（2025.05.07）
 - 🆕图片输入支持引用带有图片的消息[PR#12](https://github.com/captain-wangrun-cn/nonebot-plugin-aitalk/pull/12)
 - 🆕支持多图输入[PR#12](https://github.com/captain-wangrun-cn/nonebot-plugin-aitalk/pull/12)
