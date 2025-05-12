@@ -270,6 +270,10 @@ aitalk_group_active_reply_configs = '
 
 
 ## 📃 更新日志
+### 3.9.26（2025.05.12）
+- 🆕更新多群配置主动触发关键词
+- 🔧增加对AI返回的JSON字符串的解析的鲁棒性
+- [PR#15](https://github.com/captain-wangrun-cn/nonebot-plugin-aitalk/pull/15)
 ### 3.8.25（2025.05.11）
 - 🆕支持读取引用消息中的文本
 - 🆕增加配置，允许AI在回复多条消息时增加随机延迟
