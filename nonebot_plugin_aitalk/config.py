@@ -117,10 +117,15 @@ class Config(BaseModel):
         3,
         description="在主动回复上下文中，AI连续判断N次与追问无关后，关闭本次主动回复会话 (0表示不启用此功能)",
     )
-    # 新增：分群主动回复配置
+    # 分群主动回复配置
     aitalk_group_active_reply_configs: Dict[str, GroupActiveReplyConfig] = Field(
         default_factory=dict,
         description='分群独立主动回复配置。键为群号字符串，值为该群的特定配置。例如：\'{"12345": {"keywords": ["help", "support"], "probability": 0.8, "no_keyword_probability": 0.2}}\'',
+    )
+    # 是否禁用“忙碌/频繁操作”提示
+    aitalk_disable_busy_prompts: bool = Field(
+        False,
+        description="是否关闭诸如“不要着急哦！”或“你的操作太频繁了哦！”之类的提示信息",
     )
 
 
@@ -157,5 +162,7 @@ active_reply_context_timeout = plugin_config.aitalk_active_reply_context_timeout
 active_reply_max_unrelated_followups = (
     plugin_config.aitalk_active_reply_max_unrelated_followups
 )
-# 新增：加载分群主动回复配置
+# 加载分群主动回复配置
 group_active_reply_configs = plugin_config.aitalk_group_active_reply_configs
+# 加载是否禁用“忙碌/频繁操作”提示的配置项
+disable_busy_prompts = plugin_config.aitalk_disable_busy_prompts
