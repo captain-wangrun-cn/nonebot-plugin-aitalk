@@ -273,6 +273,10 @@ aitalk_disable_busy_prompts = Ture
 
 
 ## 📃 更新日志
+### 3.10.28（2025.05.21）
+- 🐛修复“无需回复”BUG[PR#16](https://github.com/captain-wangrun-cn/nonebot-plugin-aitalk/pull/16)
+- 🆕允许关闭提示[PR#16](https://github.com/captain-wangrun-cn/nonebot-plugin-aitalk/pull/16)
+- 🐛修复某些情况下QQ图片因SSL无法下载的问题
 ### 3.9.26（2025.05.12）
 - 🆕更新多群配置主动触发关键词
 - 🔧增加对AI返回的JSON字符串的解析的鲁棒性

@@ -227,7 +227,7 @@ async def get_images(
     current_message_obj = event.get_message()
     for segment in current_message_obj:
         if segment.type == "image":
-            image_url = segment.data.get("url")
+            image_url = segment.data.get("url").replace("https://","http://")
             if image_url and image_url not in processed_urls:
                 try:
                     logger.debug(f"get_images: 正在下载并转换当前消息图片: {image_url}")
@@ -321,7 +321,7 @@ async def get_images(
                 # 从构造的 OneBotMessage 对象中提取图片
                 for segment in replied_msg_obj:
                     if segment.type == "image":
-                        image_url = segment.data.get("url")
+                        image_url = segment.data.get("url").replace("https://","http://")
                         if image_url and image_url not in processed_urls:
                             try:
                                 logger.debug(
