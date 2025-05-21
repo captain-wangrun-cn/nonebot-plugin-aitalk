@@ -111,6 +111,7 @@ _✨ 简单好用的AI聊天插件 ✨_
 |     aitalk_active_reply_context_timeout     |    int    |  否   |                                             300                                              |                                                机器人主动回复后，上下文的有效时间（秒）                                                 |
 | aitalk_active_reply_max_unrelated_followups |    int    |  否   |                                              3                                               |                      在主动回复上下文中，AI连续判断N次与追问无关后，关闭本次主动回复会话 (0表示不启用此功能)（秒）                      |
 |      aitalk_group_active_reply_configs      |   Dict    |  否   |                                              {}                                              |                                分群独立主动回复配置。键为群号字符串，值为该群的特定配置,详见下方配置示例                                |
+|         aitalk_disable_busy_prompts         |   bool    |  否   |                                            False                                             |                                    是否关闭诸如“不要着急哦！”或“你的操作太频繁了哦！”之类的提示信息                                     |
 
 aitalk_api_list（api列表）格式：
 ```json
@@ -235,6 +236,8 @@ aitalk_group_active_reply_configs = '
         "no_keyword_probability": 0.05
     }
 }'
+
+aitalk_disable_busy_prompts = Ture
 ```
 
 #### 多群自定义提示词参考配置

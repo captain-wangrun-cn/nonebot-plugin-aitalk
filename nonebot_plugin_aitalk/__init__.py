@@ -221,10 +221,10 @@ async def try_fix_json_with_ai(
                             return extracted_json
                         except json.JSONDecodeError:
                             logger.error(
-                                f"AI返回了 '{{}}' 但解析失败，这不应发生。原始AI输出: {fixed_json_str[:200]}"
+                                f"AI返回了 '{{}}' 但解析失败。原始AI输出: {fixed_json_str[:200]}"
                             )
-                            return None  # 理论上不应发生
-                    return None  # 不是有效的JSON对象结构
+                            return None
+                    return None
 
             try:
                 json.loads(extracted_json)
@@ -269,9 +269,10 @@ async def format_reply(
     """
     result = []  # 存储最终格式化的消息段列表
     should_active_reply = False  # 主动回复的判断结果，默认为False
-    attempted_json_fix = False  # 标记是否已尝试过JSON修复
+    reply_data = {}  # 用于存储解析后的JSON数据
 
-    def process_message(msg_dict):  # 辅助函数，将单个消息字典转换为MessageSegment
+    # 辅助函数，将单个消息字典转换为MessageSegment
+    def process_message(msg_dict):
         msg_type = msg_dict.get("type")
         if msg_type == "text":
             # 纯文本
@@ -310,147 +311,153 @@ async def format_reply(
         else:
             return MessageSegment.text(f"[未知消息类型 {msg_type}]")
 
-    reply_data = {}  # 用于存储解析后的JSON数据
-
     if isinstance(reply, str):
-        try:
-            cleaned_reply = reply.strip()
+        content_to_parse = reply.strip()  # 用于解析的内容，会经过markdown清理
 
-            # 尝试从常见的Markdown代码块中提取JSON内容
-            # 首先尝试匹配 ```json ... ```
-            match_json_block = re.search(
-                r"```json\s*(\{[\s\S]*?\})\s*```", cleaned_reply, re.DOTALL
+        # 尝试从常见的Markdown代码块中提取JSON内容
+        match_json_block = re.search(
+            r"```json\s*(\{[\s\S]*?\})\s*```", content_to_parse, re.DOTALL
+        )
+        if match_json_block:
+            content_to_parse = match_json_block.group(1).strip()
+            logger.debug(
+                f"format_reply: 从 ```json ... ``` 块中预提取到JSON: {content_to_parse[:100]}..."
             )
-            if match_json_block:
-                cleaned_reply = match_json_block.group(1).strip()
+        else:
+            match_generic_block = re.search(
+                r"```\s*(\{[\s\S]*?\})\s*```", content_to_parse, re.DOTALL
+            )
+            if match_generic_block:
+                content_to_parse = match_generic_block.group(1).strip()
                 logger.debug(
-                    f"format_reply: 从 ```json ... ``` 块中预提取到JSON: {cleaned_reply[:100]}..."
+                    f"format_reply: 从 ``` ... ``` 块中预提取到JSON: {content_to_parse[:100]}..."
                 )
-            else:
-                # 如果没有 ```json ... ```, 尝试匹配通用的 ``` ... ``` (假设里面是JSON)
-                match_generic_block = re.search(
-                    r"```\s*(\{[\s\S]*?\})\s*```", cleaned_reply, re.DOTALL
-                )
-                if match_generic_block:
-                    cleaned_reply = match_generic_block.group(1).strip()
-                    logger.debug(
-                        f"format_reply: 从 ``` ... ``` 块中预提取到JSON: {cleaned_reply[:100]}..."
-                    )
-            # 如果以上都没有匹配，cleaned_reply 保持原样 (reply.strip() 的结果)
 
-            reply_data = json.loads(
-                cleaned_reply
-            )  # 现在尝试解析预处理后的 cleaned_reply
-        except json.JSONDecodeError as e:
-            logger.warning(
-                f"回复内容JSON直接解析错误（预处理后）: {e}, 内容片段: {cleaned_reply[:200]}."
+        try:
+            reply_data = json.loads(content_to_parse)  # 尝试解析清理/提取后的内容
+            logger.debug(
+                f"format_reply: 初始JSON解析成功。内容片段: {str(reply_data)[:100]}"
             )
-            if model_config_for_repair and not attempted_json_fix:
-                attempted_json_fix = True
-                logger.info("将尝试使用AI修复JSON...")
+        except json.JSONDecodeError as e_initial:
+            logger.warning(
+                f"format_reply: 初始JSON解析失败: {e_initial}. 内容片段: {content_to_parse[:200]}."
+            )
+            if model_config_for_repair:  # 如果配置了AI修复
+                logger.info("format_reply: 将尝试使用AI修复JSON...")
+                # AI修复函数应接收原始的、未经此函数内markdown清理的reply字符串
                 fixed_json_str = await try_fix_json_with_ai(
-                    reply, model_config_for_repair  # 传入原始的 reply
+                    reply, model_config_for_repair
                 )
                 if fixed_json_str:
                     try:
                         reply_data = json.loads(fixed_json_str)
-                        logger.info(f"AI修复后的JSON解析成功: {fixed_json_str[:200]}.")
+                        logger.info(
+                            f"format_reply: AI修复后的JSON解析成功: {fixed_json_str[:200]}."
+                        )
                     except json.JSONDecodeError as e_fixed:
                         logger.error(
-                            f"AI修复后的JSON仍然解析失败: {e_fixed}, 内容: {fixed_json_str[:200]}"
+                            f"format_reply: AI修复后的JSON仍然解析失败: {e_fixed}, 内容: {fixed_json_str[:200]}"
                         )
                         err_msg_list = [
                             MessageSegment.text("AI回复的格式有点奇怪，我修复失败了~")
                         ]
                         if for_active_check:
                             return False, err_msg_list
-                        return err_msg_list
-                else:
-                    logger.warning("AI修复JSON未返回有效结果或修复失败。")
-                    err_msg_list = [
-                        MessageSegment.text("AI回复的格式有点问题，而且我没能修好它。")
-                    ]
-                    if for_active_check:
+                        return err_msg_list  # 对于正常对话，也返回错误提示
+                else:  # AI修复未返回有效结果
+                    logger.warning("format_reply: AI修复JSON未返回有效结果。")
+                    # 如果AI修复不成功，且不是主动回复检查场景，则将原始回复视为纯文本
+                    if not for_active_check:
+                        logger.info(
+                            f"format_reply: AI修复失败，原始回复将作为纯文本处理: {reply[:200]}"
+                        )
+                        return [MessageSegment.text(reply)]
+                    else:  # 主动回复检查场景，必须是JSON，所以这里是错误
+                        err_msg_list = [
+                            MessageSegment.text("AI回复的格式有点问题（修复失败）。")
+                        ]
                         return False, err_msg_list
-                    return err_msg_list
-            else:
-                err_msg_list = [MessageSegment.text("AI回复的格式似乎有点问题。")]
-                if for_active_check:
+            else:  # 未配置AI修复，且初始解析失败
+                # 如果不是主动回复检查场景，将原始回复视为纯文本
+                if not for_active_check:
+                    logger.info(
+                        f"format_reply: 初始JSON解析失败且无修复配置，原始回复将作为纯文本处理: {reply[:200]}"
+                    )
+                    return [MessageSegment.text(reply)]
+                else:  # 主动回复检查场景，必须是JSON，所以这里是错误
+                    err_msg_list = [MessageSegment.text("AI回复的格式似乎有点问题。")]
                     return False, err_msg_list
-                return err_msg_list
-        except Exception as e_gen:
-            logger.error(f"处理AI回复时发生未知错误: {e_gen}, 内容片段: {reply[:200]}.")
-            err_msg_list = [MessageSegment.text("处理AI回复时发生了一个内部错误。")]
-            if for_active_check:
-                return False, err_msg_list
-            return err_msg_list
+        # 如果代码执行到这里，reply_data 应该是一个从JSON成功解析的字典
+
     elif isinstance(reply, dict):
-        reply_data = reply
-    else:
-        logger.error(f"未知的AI回复类型: {type(reply)}, 内容: {str(reply)[:200]}")
+        reply_data = reply  # 如果输入直接是字典，直接使用
+    else:  # 未知类型
+        logger.error(
+            f"format_reply: 未知的AI回复类型: {type(reply)}, 内容: {str(reply)[:200]}"
+        )
         err_msg_list = [MessageSegment.text("AI的回复格式无法识别。")]
         if for_active_check:
             return False, err_msg_list
         return err_msg_list
 
+    # --- 检查 reply_data 是否为有效字典 ---
     if not isinstance(reply_data, dict):
-        logger.error(f"内部逻辑错误：reply_data 未能正确处理为字典。")
-        err_msg_list = [MessageSegment.text("插件内部处理AI回复时出错。")]
+        # 此分支理论上不应被命中，因为前面的逻辑会确保 reply_data 是字典或已返回错误/纯文本
+        logger.error(
+            f"format_reply: 严重内部逻辑错误，reply_data 未被正确设置为字典。原始类型: {type(reply)}，当前reply_data类型: {type(reply_data)}"
+        )
+        err_msg_list = [
+            MessageSegment.text("处理AI回复时发生了一个无法恢复的内部错误。")
+        ]
         if for_active_check:
             return False, err_msg_list
         return err_msg_list
 
-    # 如果是主动回复的判断场景，解析 "should_reply" 字段
+    # ---- 正式处理 reply_data (它现在肯定是一个字典, 可能是空的 {}) ----
     if for_active_check:
-        should_active_reply = reply_data.get("should_reply", False)  # 默认为False
-        if not should_active_reply:  # 如果AI明确指示不回复
-            logger.debug(f"主动回复检查：AI指示 should_reply=false。")
-            return False, []  # 直接返回不回复和空消息列表
+        should_active_reply = reply_data.get("should_reply", False)
+        if not should_active_reply:
+            logger.debug(f"format_reply (active_check): AI指示 should_reply=false。")
+            return False, []  # 不论 messages 内容如何，AI指示不回复
 
-    # 获取 "messages" 字段，它应该是一个列表
     messages_list = reply_data.get("messages", [])
     if not isinstance(messages_list, list):
         logger.warning(
-            f"AI回复中的 'messages' 字段不是列表，实际类型: {type(messages_list)}。"
+            f"format_reply: AI回复中的 'messages' 字段不是列表，实际类型: {type(messages_list)}。内容: {str(messages_list)[:100]}"
         )
-        messages_list = []  # 安全起见，置为空列表
+        # 如果 messages 字段存在但不是列表，视为无效，返回空消息列表
+        if for_active_check:
+            # 即使 should_active_reply 为 True，如果 messages 无效，也无法发送
+            return should_active_reply, [] if should_active_reply else (False, [])
+        return []  # 正常对话场景，返回空列表
 
     # 处理 messages 列表中的每个消息项
     for msg_content in messages_list:
-        if isinstance(msg_content, dict):  # 单个消息段
+        if isinstance(msg_content, dict):
             result.append(process_message(msg_content))
-        elif isinstance(msg_content, list):  # 多个消息段组成一条消息
+        elif isinstance(msg_content, list):
             chid_result = OneBotMessage()
             for chid_msg_dict in msg_content:
                 if isinstance(chid_msg_dict, dict):
                     chid_result.append(process_message(chid_msg_dict))
-                else:
+                else:  # pragma: no cover
                     logger.debug(f"内部消息列表发现非字典项: {chid_msg_dict}")
                     chid_result.append(MessageSegment.text(str(chid_msg_dict)))
             if chid_result:
-                result.append(chid_result)  # 添加组合后的消息
-        else:  # messages 列表中包含非字典也非列表的项
+                result.append(chid_result)
+        else:  # pragma: no cover
             logger.debug(f"顶层消息列表发现未知格式项: {msg_content}")
-            result.append(MessageSegment.text(str(msg_content)))  # 作为纯文本处理
+            result.append(MessageSegment.text(str(msg_content)))
 
-    # 返回最终结果
+    # --- 最终返回 ---
     if for_active_check:
-        # 对于主动回复判断，即使 should_active_reply 为 True，如果 result 为空，也应视为不回复或回复空内容
-        # 但通常AI在 should_active_reply=True 时会给出 messages 内容
+        # 如果 should_active_reply 为 True 但 result 为空，仍然返回 True 和空列表
+        # 上层逻辑需要处理这种情况（例如，不发送空消息）
         return should_active_reply, result
     else:  # 正常对话场景
-        if not result and isinstance(reply, str) and not attempted_json_fix:
-            # 保底：如果解析后无内容，原始是字符串，且未尝试过修复（说明不是JSON格式错误而是AI就没按JSON返回）
-            # 这种情况比较少见，通常AI会返回JSON或纯文本。
-            # 如果AI返回了非JSON的纯文本，上面的 try-except 会捕获并尝试修复或报错。
-            # 此处逻辑主要是针对非常规的、非JSON字符串回复。
-            # 但由于JSON修复逻辑的存在，此分支实际执行概率较低。
-            # 为安全，如果AI返回的纯文本不是JSON，并且我们没有尝试修复它，就直接发送这个纯文本。
-            # 但如果尝试修复过（意味着它看起来像JSON但解析失败），则不应再发送原始文本。
-            logger.info("AI回复为非JSON字符串且未尝试修复，将作为纯文本发送。")
-            return [MessageSegment.text(reply)]
-        elif not result:  # 如果最终结果为空列表 (例如AI在追问场景判断不回复)
-            return []  # 返回空列表，上层逻辑会判断不发送
+        # 此时，如果 result 为空，意味着JSON被成功解析，
+        # 并且 "messages" 字段有效（是列表）但为空，或者 "messages" 字段不存在/无效（导致 result 为空）。
+        # 在这些情况下，我们应该返回空的 result (即[])，而不是原始的JSON字符串。
         return result
 
 
@@ -817,14 +824,20 @@ async def common_chat_handler(
             return
         return
 
+    # 优化：检查是否禁用忙碌提示
     if not check_cd(id_key) and not is_active_check:
         if (
-            (isinstance(event, GroupMessageEvent) and event.to_me)
-            or isinstance(event, PrivateMessageEvent)
-            or is_active_context_follow_up
-        ):
-            await bot.send(event, "你的操作太频繁了哦！请稍后再试！", at_sender=True)
-        return
+            not plugin_config.aitalk_disable_busy_prompts
+        ):  # 新增中文注释：如果未禁用忙碌提示
+            if (
+                (isinstance(event, GroupMessageEvent) and event.to_me)
+                or isinstance(event, PrivateMessageEvent)
+                or is_active_context_follow_up  # 追问场景也受CD影响，且应提示
+            ):
+                await bot.send(
+                    event, "你的操作太频繁了哦！请稍后再试！", at_sender=True
+                )
+        return  # 无论是否提示，CD未到都应返回
 
     # 初始化用户/群聊的运行时配置 (如果尚不存在)
     if chat_type not in user_config:
@@ -836,8 +849,6 @@ async def common_chat_handler(
     if "model" not in user_config[chat_type][id_key]:
         if is_active_check or is_active_context_follow_up:
             logger.info(f"主动回复 ({chat_type} {id_key}): 未选择模型，已忽略。")
-            # if is_active_check: # 不再抛出
-            # raise IgnoredException("主动回复：模型未选")
             return
         await bot.send(
             event,
@@ -847,8 +858,14 @@ async def common_chat_handler(
         return
 
     # 队列检查：防止同一会话并发处理消息 (主动回复的初次判断不入队)
+    # 追问也应该检查队列，因为它也是一个完整的AI交互
     if id_key in sequence[chat_type] and not is_active_check:
-        await bot.send(event, "不要着急哦！我还在思考上一条消息呢...", at_sender=True)
+        if (
+            not plugin_config.aitalk_disable_busy_prompts
+        ):  # 新增中文注释：如果未禁用忙碌提示
+            await bot.send(
+                event, "不要着急哦！我还在思考上一条消息呢...", at_sender=True
+            )
         return
 
     images_base64 = []  # 存储消息中图片的base64编码
@@ -864,8 +881,6 @@ async def common_chat_handler(
             f"严重错误：无法找到模型 {user_config[chat_type][id_key]['model']} 的配置信息。"
         )
         if is_active_check or is_active_context_follow_up:
-            # if is_active_check: # 不再抛出
-            # raise IgnoredException("主动回复：模型配置丢失")
             return
         await bot.send(
             event,
@@ -900,7 +915,7 @@ async def common_chat_handler(
                 if character_prompt_content:
                     logger.info(
                         f"群聊 {id_key} 加载专属提示词: {group_prompt_file_path.name}"
-                    )  # 精简日志
+                    )
                 else:
                     logger.warning(
                         f"群聊 {id_key} 专属提示词文件为空: {group_prompt_file_path.name}"
@@ -909,7 +924,6 @@ async def common_chat_handler(
             except Exception as e:
                 logger.error(f"读取群聊 {id_key} 专属提示词文件失败: {e}")
                 character_prompt_content = None
-        # else: logger.debug(f"群聊 {id_key} 未找到专属提示词文件。") # 精简日志
 
     if (
         character_prompt_content is None and default_prompt_file
@@ -925,7 +939,7 @@ async def common_chat_handler(
                 if character_prompt_content:
                     logger.info(
                         f"加载全局默认提示词文件: {default_prompt_file_path.name}"
-                    )  # 精简日志
+                    )
                 else:
                     logger.warning(
                         f"全局默认提示词文件为空: {default_prompt_file_path.name}"
@@ -943,7 +957,6 @@ async def common_chat_handler(
         character_prompt_content is None
     ):  # 如果文件加载均失败/未配置，使用配置中的默认字符串
         character_prompt_content = default_prompt
-        # logger.info(f"使用配置中的默认提示词。") # 精简日志
     if not character_prompt_content:  # 最终保底，如果提示词内容仍为空
         character_prompt_content = "你是一个乐于助人的AI助手。"
         logger.warning("所有提示词来源均为空或加载失败，使用最基础的默认提示词。")
@@ -1222,8 +1235,9 @@ async def common_chat_handler(
     messages_to_send_to_api.append(current_user_message_for_api)
 
     try:
-        # 主动回复的初次判断不入处理队列
-        if not is_active_check:
+        # 主动回复的初次判断 和 主动回复的追问判断 都不入处理队列sequence
+        # 只有直接@机器人或私聊机器人的消息才进入sequence队列控制并发
+        if not is_active_check and not is_active_context_follow_up:
             sequence[chat_type].append(id_key)
 
         # 调用AI生成回复
@@ -1239,23 +1253,18 @@ async def common_chat_handler(
                 logger.error(
                     f"主动回复判断：AI生成失败 ({chat_type} {id_key}): {err_msg}"
                 )
-                # raise IgnoredException(f"主动回复判断：AI生成失败: {err_msg}") # 不再抛出
-                return  # 直接返回，允许其他插件处理
+                return
             await bot.send(
                 event, err_msg if err_msg else "AI生成回复失败了...", at_sender=True
             )
-            # 注意：此处不从 user_config 中 pop 消息，因为用户消息还未正式加入历史
             return
 
-        # logger.debug(f"AI原始回复 ({chat_type} {id_key}{' - 主动判断' if is_active_check else (' - 主动追问' if is_active_context_follow_up else '')}): {str(reply_content_str)[:100]}...") # 精简日志
-
-        if reply_content_str is None:  # AI未返回任何内容
+        if reply_content_str is None:
             if is_active_check:
                 logger.warning(
                     f"主动回复判断：AI未能生成回复内容 (返回None) ({chat_type} {id_key})"
                 )
-                # raise IgnoredException("主动回复判断：AI返回None") # 不再抛出
-                return  # 直接返回，允许其他插件处理
+                return
             await bot.send(event, "AI好像有点累了，什么都没说...", at_sender=True)
             return
 
@@ -1295,14 +1304,12 @@ async def common_chat_handler(
                 )  # AI的回复也加入历史
             else:  # AI判断不需要回复或回复内容为空
                 logger.info(
-                    f"主动回复：AI判断不需要回复群聊 {id_key} 的消息 (ID: {event.message_id})。此 handler 将不处理，允许其他插件响应。"
+                    f"主动回复：AI判断不需要回复群聊 {id_key} 的消息 (ID: {event.message_id})。或回复内容为空。"
                 )
-                # 不再抛出 IgnoredException，直接返回，因为 active_reply_handler.block=False
-            return  # 主动回复初次判断流程结束 (此 return 覆盖了 if 和 else 两种情况)
+            return  # 主动回复初判流程结束
 
         # --- 场景：正常对话 或 主动回复的上下文追问 ---
-        # 1. 将用户的提问加入到永久历史记录中
-        user_config[chat_type][id_key]["messages"].append(current_user_message_for_api)
+        # 1. 将用户的提问加入到永久历史记录中 (已在 messages_to_send_to_api.append 时加入)
         # 2. 将AI的回复也加入到永久历史记录中
         user_config[chat_type][id_key]["messages"].append(
             {"role": "assistant", "content": reply_content_str}
@@ -1316,12 +1323,12 @@ async def common_chat_handler(
         # 对于追问场景，for_active_check应为True，以便能解析should_reply来判断是否真为追问
         parsed_result_tuple_or_list = await format_reply(
             reply_content_str,
-            for_active_check=is_active_context_follow_up,
+            for_active_check=is_active_context_follow_up,  # 追问场景也用 for_active_check=True
             model_config_for_repair=selected_model_config,
         )
 
-        actual_parsed_list_to_send = []  # 最终要发送给用户的消息列表
-        is_related_followup_by_ai = True  # AI是否认为这是相关追问 (仅在追问场景下有效)
+        actual_parsed_list_to_send = []
+        is_related_followup_by_ai = True  # 默认为相关追问
 
         if is_active_context_follow_up:  # 如果是追问场景
             if (
@@ -1339,8 +1346,8 @@ async def common_chat_handler(
                 logger.error(
                     f"内部错误：format_reply 在追问场景未返回 (bool, list) 元组。实际返回: {type(parsed_result_tuple_or_list)}"
                 )
-                actual_parsed_list_to_send = []  # 安全起见，视为空列表
-                is_related_followup_by_ai = False  # 视为不相关
+                actual_parsed_list_to_send = []
+                is_related_followup_by_ai = False
         else:  # 正常对话场景
             actual_parsed_list_to_send = (
                 parsed_result_tuple_or_list
@@ -1348,17 +1355,13 @@ async def common_chat_handler(
                 else []
             )
 
-        # 如果最终没有可发送的消息内容 (例如AI在追问时判断不相关且返回空messages)
-        if not actual_parsed_list_to_send:
-            if is_active_context_follow_up:  # 仅在追问场景下处理“无内容回复”
+        if not actual_parsed_list_to_send:  # 如果最终没有可发送的消息内容
+            if is_active_context_follow_up:
                 logger.info(
                     f"主动回复追问场景：AI判断无需回复或返回空内容。群聊 {id_key}, 用户 {event.user_id}."
                 )
                 if id_key in active_reply_sessions:
-                    active_reply_sessions[id_key][
-                        "last_interaction_time"
-                    ] = time.time()  # 更新最后互动时间
-                    # 如果AI判断不是相关追问，并且启用了最大无关追问次数限制
+                    active_reply_sessions[id_key]["last_interaction_time"] = time.time()
                     if (
                         not is_related_followup_by_ai
                         and active_reply_max_unrelated_followups > 0
@@ -1377,23 +1380,23 @@ async def common_chat_handler(
                             logger.info(
                                 f"群聊 {id_key} 达到最大无关追问次数 ({active_reply_max_unrelated_followups})，关闭主动回复会话。"
                             )
-                            del active_reply_sessions[id_key]  # 关闭会话
-                return  # 直接返回，不发送任何消息
+                            del active_reply_sessions[id_key]
+            else:  # 正常对话场景，如果解析后为空列表（例如AI返回了不回复JSON），则不发送
+                logger.info(
+                    f"正常对话场景：AI解析后无消息内容可发送。群聊/用户 {id_key}。"
+                )
+            return  # 不发送任何消息
 
         # 准备发送消息
         should_reply_event_msg_flag, original_msg_id_to_reply_val = need_reply_msg(
-            reply_content_str, event
+            reply_content_str, event  # reply_content_str 是原始JSON字符串
         )
 
-        if is_active_context_follow_up:  # 如果是主动回复的追问场景
-            should_reply_event_msg_flag = (
-                False  # 追问时不“引用回复”最初那条被主动回应的用户消息
-            )
+        if is_active_context_follow_up:
+            should_reply_event_msg_flag = False
             if id_key in active_reply_sessions:
-                active_reply_sessions[id_key][
-                    "last_interaction_time"
-                ] = time.time()  # 更新会话互动时间
-                if is_related_followup_by_ai:  # 如果AI认为是相关追问，重置无关计数器
+                active_reply_sessions[id_key]["last_interaction_time"] = time.time()
+                if is_related_followup_by_ai:
                     active_reply_sessions[id_key]["unrelated_followup_count"] = 0
                     logger.debug(f"群聊 {id_key} 追问被AI判断为相关，重置无关计数。")
 
@@ -1404,25 +1407,29 @@ async def common_chat_handler(
             should_reply_event_msg_flag,
             original_msg_id_to_reply_val,
         )
-        if not is_active_check:
-            add_cd(id_key)  # 初次主动判断不计CD，其他所有成功交互（包括追问）都计CD
+        # 无论是正常对话还是成功的追问，都应该有CD
+        add_cd(id_key)
 
-    except IgnoredException:  # 捕获由本处理函数或下层调用明确抛出的IgnoredException
-        # logger.debug(f"消息处理被明确忽略（IgnoredException）: {e.args[0] if e.args else 'No reason provided'}")
-        raise  # 重新抛出，由NoneBot核心处理 (对于block=False的matcher，允许其他matcher尝试)
-    except Exception as e:  # 其他所有未预料的异常
+    except IgnoredException:  # pragma: no cover
+        raise
+    except Exception as e:  # pragma: no cover
         logger.error(
             f"AI处理过程中发生严重错误 ({chat_type} {id_key}): {e}", exc_info=True
-        )  # 记录完整错误信息
-        error_message_text = f"哎呀，AI思考的时候好像出了点大问题！请稍后再试或联系管理员。"  # 通用错误提示
-        # 主动回复的初次判断如果在这里出错，也不应打扰用户
-        if not is_active_check:
+        )
+        error_message_text = (
+            f"哎呀，AI思考的时候好像出了点大问题！请稍后再试或联系管理员。"
+        )
+        if not is_active_check:  # 主动回复初判出错不打扰用户
             await bot.send(
                 event, error_message_text, at_sender=True, reply_message=True
             )
     finally:
-        # 确保从处理队列中移除 (仅对非初次主动判断的交互)
-        if not is_active_check and id_key in sequence[chat_type]:
+        # 确保从处理队列中移除 (仅对直接@或私聊的交互)
+        if (
+            not is_active_check
+            and not is_active_context_follow_up
+            and id_key in sequence[chat_type]
+        ):
             sequence[chat_type].remove(id_key)
 
 
@@ -1436,16 +1443,16 @@ active_reply_context_handler.handle()(common_chat_handler)
 @driver.on_startup
 async def _():
     """插件启动时执行的钩子函数，用于加载用户配置。"""
-    if save_user_config:  # 如果启用了保存用户配置
+    if save_user_config:
         global user_config
-        saved_data = read_all_data()  # 从本地存储读取数据
+        saved_data = read_all_data()
         if saved_data:
             for chat_type_key in ["private", "group"]:
                 if chat_type_key in saved_data:
-                    user_config[chat_type_key] = {}  # 初始化
+                    user_config[chat_type_key] = {}
                     for id_val, config_data_val in saved_data[chat_type_key].items():
                         user_config[chat_type_key][id_val] = {}
-                        if "model" in config_data_val:  # 只恢复模型选择
+                        if "model" in config_data_val:
                             user_config[chat_type_key][id_val]["model"] = (
                                 config_data_val["model"]
                             )
@@ -1454,14 +1461,14 @@ async def _():
             user_config = {
                 "private": {},
                 "group": {},
-            }  # 未找到文件或文件为空，使用默认空配置
+            }
             logger.info("未找到用户运行时配置文件，使用默认空配置。")
 
 
 @driver.on_shutdown
 async def _():
     """插件关闭时执行的钩子函数，用于保存用户配置。"""
-    if save_user_config:  # 如果启用了保存用户配置
+    if save_user_config:
         global user_config
         data_to_save = {"private": {}, "group": {}}
         for chat_type_key in ["private", "group"]:
@@ -1469,7 +1476,7 @@ async def _():
                 data_to_save[chat_type_key] = {}
                 for id_val, config_data_val in user_config[chat_type_key].items():
                     data_to_save[chat_type_key][id_val] = {}
-                    if "model" in config_data_val:  # 只保存模型选择
+                    if "model" in config_data_val:
                         data_to_save[chat_type_key][id_val]["model"] = config_data_val[
                             "model"
                         ]
