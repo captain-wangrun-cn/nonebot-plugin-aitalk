@@ -850,13 +850,18 @@ async def common_chat_handler(
         if is_active_check or is_active_context_follow_up:
             logger.info(f"主动回复 ({chat_type} {id_key}): 未选择模型，已忽略。")
             return
-        await bot.send(
-            event,
-            "你还没有选择AI模型哦，请先使用 /选择模型 <模型名> 来选择一个模型吧！",
-            at_sender=True,
-        )
-        return
+        if default_model:
+            # 使用默认模型
+            user_config[chat_type][id_key]["model"] = default_model
+        else:
+            await bot.send(
+                event,
+                "你还没有选择AI模型哦，请先使用 /选择模型 <模型名> 来选择一个模型吧！",
+                at_sender=True,
+            )
+            return
 
+  
     # 队列检查：防止同一会话并发处理消息 (主动回复的初次判断不入队)
     # 追问也应该检查队列，因为它也是一个完整的AI交互
     if id_key in sequence[chat_type] and not is_active_check:

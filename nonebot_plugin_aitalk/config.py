@@ -48,6 +48,7 @@ class GroupActiveReplyConfig(BaseModel):
 
 
 class Config(BaseModel):
+    aitalk_default_model: str = Field("", description="默认选择的模型名称")
     aitalk_command_start: str = Field("", description="对话触发前缀")
     aitalk_api_list: list[ModelConfig] = Field(..., description="API配置")
     aitalk_default_prompt: str = Field(
@@ -130,6 +131,7 @@ class Config(BaseModel):
 
 
 plugin_config = get_plugin_config(Config)  # 加载插件配置
+default_model = plugin_config.aitalk_default_model
 command_start = plugin_config.aitalk_command_start
 api_list = plugin_config.aitalk_api_list
 default_prompt = plugin_config.aitalk_default_prompt
