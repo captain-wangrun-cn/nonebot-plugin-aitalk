@@ -311,6 +311,8 @@ aitalk_disable_busy_prompts = Ture
 
 
 ## 📃 更新日志
+### 3.11.29（2025.06.10）
+- 🐛修复某些API下的多模态模型出现Error Code 400[#19](https://github.com/captain-wangrun-cn/nonebot-plugin-aitalk/issues/19)
 ### 3.11.28（2025.05.25）
 - 🆕新增默认模型配置项
 ### 3.10.28（2025.05.21）

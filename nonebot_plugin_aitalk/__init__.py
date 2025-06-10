@@ -1,14 +1,14 @@
 import os
 from openai import AsyncOpenAI
-from pathlib import Path  # 引入 Path
+from pathlib import Path
 from nonebot import on_message, on_command, get_driver, require, logger
 from nonebot.rule import Rule
 from nonebot.plugin import PluginMetadata
 from nonebot.permission import SUPERUSER
-from nonebot.adapters import Message  # Message 类型用于 CommandArg
-from nonebot.params import CommandArg, EventPlainText  # 显式导入 EventPlainText
-from nonebot.typing import T_State  # 导入 T_State
-from nonebot.exception import IgnoredException  # 导入 IgnoredException
+from nonebot.adapters import Message
+from nonebot.params import CommandArg, EventPlainText
+from nonebot.typing import T_State
+from nonebot.exception import IgnoredException
 
 from nonebot.adapters.onebot.v11 import (
     GroupMessageEvent,
@@ -18,19 +18,20 @@ from nonebot.adapters.onebot.v11 import (
     GROUP_OWNER,
     PRIVATE_FRIEND,
     MessageSegment,
-    Message as OneBotMessage,  # 明确这是 OneBot V11 的 Message
+    Message as OneBotMessage,
     Bot,
 )
 
-require("nonebot_plugin_localstore")  # 确保本地存储插件已加载
+require("nonebot_plugin_localstore")
+require("nonebot_plugin_alconna")
 
-import json, time, random, re  # 导入 re
-from .config import *  # 导入所有配置
-from .api import gen  # 从 api.py 导入 gen 函数
-from .data import *  # 从 data.py 导入数据处理函数
-from .cd import *  # 从 cd.py 导入CD处理函数
-from .utils import *  # 从 utils.py 导入工具函数
-from .msg_seg import *  # 从 msg_seg.py 导入消息段定义 (如果实际有用到的话)
+import json, time, random, re
+from .config import *
+from .api import gen
+from .data import *
+from .cd import *
+from .utils import *
+from .msg_seg import *
 
 
 __plugin_meta__ = PluginMetadata(
@@ -60,11 +61,11 @@ __plugin_meta__ = PluginMetadata(
     ),
     type="application",
     homepage="https://github.com/captain-wangrun-cn/nonebot-plugin-aitalk",
-    config=Config,  # 引用配置类
-    supported_adapters={"~onebot.v11"},  # 支持的适配器
+    config=Config,
+    supported_adapters={"~onebot.v11"},
 )
 
-driver = get_driver()  # 获取 NoneBot Driver 对象
+driver = get_driver()
 
 # 用户运行时配置，用于存储模型选择、聊天记录等状态
 user_config = {
@@ -1316,6 +1317,9 @@ async def common_chat_handler(
         # --- 场景：正常对话 或 主动回复的上下文追问 ---
         # 1. 将用户的提问加入到永久历史记录中 (已在 messages_to_send_to_api.append 时加入)
         # 2. 将AI的回复也加入到永久历史记录中
+        user_config[chat_type][id_key]["messages"].append(
+            current_user_message_for_api
+        )
         user_config[chat_type][id_key]["messages"].append(
             {"role": "assistant", "content": reply_content_str}
         )
