@@ -28,7 +28,6 @@ from .msg_seg import *
 from fish_audio_sdk import Session, TTSRequest, Prosody
 
 import nonebot_plugin_localstore as store
-from nonebot_plugin_alconna.uniseg import Image, UniMessage
 
 session = Session(apikey=tts_config.api_key, base_url=tts_config.api_url)
 
