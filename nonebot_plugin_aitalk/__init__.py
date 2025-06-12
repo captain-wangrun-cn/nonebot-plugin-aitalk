@@ -615,8 +615,9 @@ async def at_me_rule(bot: Bot, event: GroupMessageEvent) -> bool:
             msg_text.startswith(cs) for cs in command_start
         ):
             is_command_prefix = True  # 支持列表形式的命令起始符
-
-    return is_at_me or is_command_prefix  # 任一条件满足即可
+        return is_at_me and is_command_prefix  # 配置了命令起始符，需要两个同时满足
+    else:
+        return is_at_me  # 没有配置命令起始符，仅返回是否艾特
 
 
 async def active_reply_trigger_rule(

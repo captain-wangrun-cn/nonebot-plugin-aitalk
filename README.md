@@ -311,6 +311,8 @@ aitalk_disable_busy_prompts = Ture
 
 
 ## 📃 更新日志
+### 3.11.31（2025.06.11）
+- 🐛修复了起始符配置项不生效的问题[#20](https://github.com/captain-wangrun-cn/nonebot-plugin-aitalk/issues/20)
 ### 3.11.30（2025.06.10）
 - 🐛删除无用依赖
 - 🐛修复某些API下的多模态模型出现Error Code 400[#19](https://github.com/captain-wangrun-cn/nonebot-plugin-aitalk/issues/19)
@@ -318,14 +320,15 @@ aitalk_disable_busy_prompts = Ture
 - 🐛修复某些API下的多模态模型出现Error Code 400[#19](https://github.com/captain-wangrun-cn/nonebot-plugin-aitalk/issues/19)
 ### 3.11.28（2025.05.25）
 - 🆕新增默认模型配置项
-### 3.10.28（2025.05.21）
-- 🐛修复“无需回复”BUG[PR#16](https://github.com/captain-wangrun-cn/nonebot-plugin-aitalk/pull/16)
-- 🆕允许关闭提示[PR#16](https://github.com/captain-wangrun-cn/nonebot-plugin-aitalk/pull/16)
-- 🐛修复某些情况下QQ图片因SSL无法下载的问题
+
 
 <details>
 <summary>之前更新</summary>
 
+### 3.10.28（2025.05.21）
+- 🐛修复“无需回复”BUG[PR#16](https://github.com/captain-wangrun-cn/nonebot-plugin-aitalk/pull/16)
+- 🆕允许关闭提示[PR#16](https://github.com/captain-wangrun-cn/nonebot-plugin-aitalk/pull/16)
+- 🐛修复某些情况下QQ图片因SSL无法下载的问题
 ### 3.9.26（2025.05.12）
 - 🆕更新多群配置主动触发关键词
 - 🔧增加对AI返回的JSON字符串的解析的鲁棒性
