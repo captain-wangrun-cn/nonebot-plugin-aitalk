@@ -252,6 +252,7 @@ aitalk_tts_config = '
     "api_key": "114514919810",
     "reference_id": "fee77b5adcb840178e9596514d713a3b"
 }
+'
 
 aitalk_message_send_delay_min = 0.3
 aitalk_message_send_delay_max = 1.2
