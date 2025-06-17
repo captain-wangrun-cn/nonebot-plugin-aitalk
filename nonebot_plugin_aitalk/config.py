@@ -30,8 +30,8 @@ class MemeConfig(BaseModel):
 
 class TTSConfig(BaseModel):
     api_url: str = Field("https://api.fish.audio", description="FishAudio API地址")
-    api_key: str = Field(..., description="API Key")
-    reference_id: str = Field(..., description="音色的 Reference ID")
+    api_key: str = Field("", description="API Key")
+    reference_id: str = Field("", description="音色的 Reference ID")
     speed: float = Field(1.0, description="语速")
     volume: float = Field(0.0, description="音量")
 
