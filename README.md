@@ -234,7 +234,7 @@ aitalk_available_memes = '
 {
     "url": "D:/bots/imgs/1.png",
     "desc": "很抱歉伤害到你"
-}
+},
 {
     "url": "D:/bots/imgs/3.png",
     "desc": "啊哈哈...（感到尴尬）"
