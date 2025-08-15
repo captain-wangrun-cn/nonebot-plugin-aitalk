@@ -23,7 +23,6 @@ from nonebot.adapters.onebot.v11 import (
 )
 
 require("nonebot_plugin_localstore")
-require("nonebot_plugin_alconna")
 
 import json, time, random, re
 from .config import *
