@@ -132,7 +132,7 @@ async def send_formatted_reply(
                     if member_info["role"] not in ["admin", "owner"]:
                         await bot.send(
                             event,
-                            "呀呀呀，我好像没有权限禁言别人呢……",
+                            "呀呀呀，我好像没有权限禁言别人呢……" if msg_segment.duration else "呀呀呀，我好像没有权限解禁别人呢……",
                             **current_reply_params,
                         )
                         continue  # 使用 continue 跳过当前循环
@@ -146,7 +146,7 @@ async def send_formatted_reply(
                     ]:  # 不能禁言管理员或群主
                         await bot.send(
                             event,
-                            "呀呀呀，这个人我可不敢禁言……",
+                            "呀呀呀，这个人我可不敢禁言……" if msg_segment.duration else "呀呀呀，这个人我可解禁不了……",
                             **current_reply_params,
                         )
                         continue
@@ -156,16 +156,24 @@ async def send_formatted_reply(
                         user_id=msg_segment.uid,
                         duration=msg_segment.duration,
                     )
-                    await bot.send(
-                        event,
-                        f"已将用户 {msg_segment.uid} 禁言 {msg_segment.duration} 秒。",
-                        **current_reply_params,
-                    )
+
+                    if msg_segment.duration:
+                        await bot.send(
+                            event,
+                            f"已将用户 {msg_segment.uid} 禁言 {msg_segment.duration} 秒。",
+                            **current_reply_params,
+                        )
+                    else:
+                        await bot.send(
+                            event,
+                            f"已将用户 {msg_segment.uid} 解除禁言。",
+                            **current_reply_params,
+                        )
 
                 except Exception as e:
-                    logger.error(f"禁言用户失败: {e}")
+                    logger.error(f"禁言/解禁用户失败: {e}")
                     await bot.send(
-                        event, "呀呀呀，禁言好像失败了呢……", **current_reply_params
+                        event, "呀呀呀，禁言/解禁好像失败了呢……", **current_reply_params
                     )
             else:  # 私聊不能禁言
                 pass
