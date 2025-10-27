@@ -32,7 +32,6 @@ from .data import *
 from .cd import *
 from .utils import *
 from .msg_seg import *
-import httpx
 
 __plugin_meta__ = PluginMetadata(
     name="简易AI聊天",
@@ -154,11 +153,7 @@ async def try_fix_json_with_ai(
 
         http_client = None
         if proxy:
-            proxies = {
-                "http://": proxy,
-                "https://": proxy,
-            }
-            http_client = httpx.AsyncClient(proxies=proxies)
+            http_client = httpx.AsyncClient(proxy=proxy)
 
         # 创建临时的OpenAI客户端进行调用
         client = AsyncOpenAI(

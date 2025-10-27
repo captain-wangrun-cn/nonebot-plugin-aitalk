@@ -2,6 +2,7 @@ from openai import AsyncOpenAI, InternalServerError
 from .config import plugin_config, proxy
 from typing import Tuple
 import re
+import httpx
 from nonebot.log import logger
 
 
@@ -26,11 +27,7 @@ async def gen(
 
     http_client = None
     if proxy:
-        proxies = {
-            "http://": proxy,
-            "https://": proxy,
-        }
-        http_client = httpx.AsyncClient(proxies=proxies)
+        http_client = httpx.AsyncClient(proxy=proxy)
     client = AsyncOpenAI(base_url=api_url, api_key=api_key, http_client=http_client)
 
     try:
