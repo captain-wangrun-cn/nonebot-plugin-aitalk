@@ -1,5 +1,5 @@
 from openai import AsyncOpenAI, InternalServerError
-from .config import plugin_config
+from .config import plugin_config, proxy
 from typing import Tuple
 import re
 from nonebot.log import logger
@@ -22,8 +22,16 @@ def extract_thinking_content(text):
 
 async def gen(
     messages: dict, model_name: str, api_key: str, api_url: str
-) -> Tuple[str | None, str | None, bool, str|None]:
-    client = AsyncOpenAI(base_url=api_url, api_key=api_key)
+) -> Tuple[str | None, str | None, bool, str | None]:
+
+    http_client = None
+    if proxy:
+        proxies = {
+            "http://": proxy,
+            "https://": proxy,
+        }
+        http_client = httpx.AsyncClient(proxies=proxies)
+    client = AsyncOpenAI(base_url=api_url, api_key=api_key, http_client=http_client)
 
     try:
         completion = await client.chat.completions.create(
@@ -41,11 +49,14 @@ async def gen(
             reasoning = completion.choices[0].message.model_extra["reasoning_content"]
         elif "<think>" in message and "</think>" in message:
             reasoning, message = extract_thinking_content(message)
-    
+
         return message, reasoning, True, None
     except InternalServerError as e:
         logger.error(f"Internal Server Error: {e}")
-        return None, None, False, "很抱歉！可能是服务器负载过高，稍后再试哦~"+str(e)
+        return None, None, False, "很抱歉！可能是服务器负载过高，稍后再试哦~" + str(e)
     except Exception as e:
         logger.error(f"Error: {e}")
-        return None, None, False, "很抱歉！发生了未知错误，请稍后再试哦~"+str(e)
+        return None, None, False, "很抱歉！发生了未知错误，请稍后再试哦~" + str(e)
+    finally:
+        if http_client:
+            await http_client.aclose()
