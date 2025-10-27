@@ -128,6 +128,10 @@ class Config(BaseModel):
         False,
         description="是否关闭诸如“不要着急哦！”或“你的操作太频繁了哦！”之类的提示信息",
     )
+    aitalk_proxy: str = Field(
+        None,
+        description="自定义代理地址，例如 [http://127.0.0.1:7897](http://127.0.0.1:7897)",
+    )
 
 
 plugin_config = get_plugin_config(Config)  # 加载插件配置
@@ -168,3 +172,4 @@ active_reply_max_unrelated_followups = (
 group_active_reply_configs = plugin_config.aitalk_group_active_reply_configs
 # 加载是否禁用“忙碌/频繁操作”提示的配置项
 disable_busy_prompts = plugin_config.aitalk_disable_busy_prompts
+proxy = plugin_config.aitalk_proxy

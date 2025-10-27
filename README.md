@@ -193,6 +193,7 @@ _✨ 简单好用的 AI 聊天插件 ✨_
 |        aitalk_active_reply_keywords        | list[str] |  否  |   []   |              主动回复的触发关键字列表, 例如 '["问题", "请问", "大佬"]'               |
 |      aitalk_active_reply_probability       |   float   |  否  |  0.3   |                    满足关键字后，触发主动回复的概率 (0.0 到 1.0)                     |
 | aitalk_active_reply_no_keyword_probability |   float   |  否  |  0.05  |          未满足关键字时，触发主动回复的概率 (0.0 到 1.0)，建议设置较低的值           |
+| aitalk_proxy                               |   str     |  否  |  None  |          为模型使用的代理,例如"http://127.0.0.1:7897"          |
 
 <details>
 <summary>aitalk_completion_config（生成配置）格式</summary>

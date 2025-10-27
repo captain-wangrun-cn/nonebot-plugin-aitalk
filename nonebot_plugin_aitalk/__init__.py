@@ -26,12 +26,12 @@ require("nonebot_plugin_localstore")
 
 import json, time, random, re
 from .config import *
+from .config import proxy
 from .api import gen
 from .data import *
 from .cd import *
 from .utils import *
 from .msg_seg import *
-
 
 __plugin_meta__ = PluginMetadata(
     name="简易AI聊天",
@@ -151,10 +151,15 @@ async def try_fix_json_with_ai(
             max_token=1024, temperature=0.1, top_p=0.8  # 降低 temperature 使输出更稳定
         )
 
+        http_client = None
+        if proxy:
+            http_client = httpx.AsyncClient(proxy=proxy)
+
         # 创建临时的OpenAI客户端进行调用
         client = AsyncOpenAI(
             base_url=original_model_config.api_url,
             api_key=original_model_config.api_key,
+            http_client=http_client,
         )
         completion = await client.chat.completions.create(
             model=original_model_config.model_name,  # 使用原始模型
@@ -247,6 +252,9 @@ async def try_fix_json_with_ai(
     except Exception as e:
         logger.error(f"AI修复JSON过程中发生严重错误: {e}", exc_info=True)
         return None
+    finally:
+        if http_client:
+            await http_client.aclose()
 
 
 # 修改 format_reply 以支持主动回复检查和JSON修复
@@ -862,7 +870,6 @@ async def common_chat_handler(
             )
             return
 
-  
     # 队列检查：防止同一会话并发处理消息 (主动回复的初次判断不入队)
     # 追问也应该检查队列，因为它也是一个完整的AI交互
     if id_key in sequence[chat_type] and not is_active_check:
@@ -1318,9 +1325,7 @@ async def common_chat_handler(
         # --- 场景：正常对话 或 主动回复的上下文追问 ---
         # 1. 将用户的提问加入到永久历史记录中 (已在 messages_to_send_to_api.append 时加入)
         # 2. 将AI的回复也加入到永久历史记录中
-        user_config[chat_type][id_key]["messages"].append(
-            current_user_message_for_api
-        )
+        user_config[chat_type][id_key]["messages"].append(current_user_message_for_api)
         user_config[chat_type][id_key]["messages"].append(
             {"role": "assistant", "content": reply_content_str}
         )
