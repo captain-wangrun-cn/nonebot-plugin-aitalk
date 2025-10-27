@@ -320,6 +320,10 @@ aitalk_disable_busy_prompts = Ture
 
 ## 📃 更新日志
 
+### 3.13.33（2025.10.27）
+
+- 🆕 允许自定义模型的代理[#22](ghttps://github.com/captain-wangrun-cn/nonebot-plugin-aitalk/pull/22)
+
 ### 3.12.33（2025.10.23）
 
 - 🆕 添加解除禁言功能[#21](https://github.com/captain-wangrun-cn/nonebot-plugin-aitalk/issues/21)
@@ -327,14 +331,6 @@ aitalk_disable_busy_prompts = Ture
 ### 3.11.33（2025.08.15）
 
 - 🐛 移除无用依赖
-
-### 3.11.32（2025.06.17）
-
-- 🐛 修复了语音配置报错问题
-
-### 3.11.31（2025.06.11）
-
-- 🐛 修复了起始符配置项不生效的问题[#20](https://github.com/captain-wangrun-cn/nonebot-plugin-aitalk/issues/20)
 
 
 
@@ -344,6 +340,14 @@ aitalk_disable_busy_prompts = Ture
 
 <details>
 <summary>之前更新</summary>
+### 3.11.32（2025.06.17）
+
+- 🐛 修复了语音配置报错问题
+
+### 3.11.31（2025.06.11）
+
+- 🐛 修复了起始符配置项不生效的问题[#20](https://github.com/captain-wangrun-cn/nonebot-plugin-aitalk/issues/20)
+  
 ### 3.11.30（2025.06.10）
 
 - 🐛 删除无用依赖
