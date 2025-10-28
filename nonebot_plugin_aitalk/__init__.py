@@ -35,7 +35,7 @@ from .msg_seg import *
 
 __plugin_meta__ = PluginMetadata(
     name="简易AI聊天",
-    description="简单好用的AI聊天插件。支持多API、图片理解、语音合成、表情包、提醒、戳一戳等。群聊提示词通过在指定目录创建 {GROUP_ID}.txt 文件进行配置。拥有主动回复功能，并支持分群配置主动回复关键词和概率。",
+    description="简单好用的AI聊天插件。支持多API、图片理解、语音合成、表情包、解/禁言、提醒、戳一戳等。支持分群配置提示词。拥有主动回复功能，并支持分群配置主动回复关键词和概率",
     usage=(
         "@机器人发起聊天\n"
         "/选择模型 <模型名>\n"
@@ -910,6 +910,9 @@ async def common_chat_handler(
     if selected_model_config.image_input:  # 如果模型支持图片输入
         images_base64 = await get_images(event, bot)  # 提取图片
 
+    # 获取消息中的艾特
+    at_list = get_at(event.message)
+
     # --- 构建 System Prompt ---
     # 表情包列表字符串，供AI参考
     memes_msg_list_str = f"url - 描述"
@@ -1207,6 +1210,7 @@ async def common_chat_handler(
     - 消息时间：{time.strftime("%Y-%m-%d %H:%M:%S",time.localtime(event.time))}
     - 消息id: {str(event.message_id)}
     - 群号: {str(event.group_id) if isinstance(event,GroupMessageEvent) else "这是一条私聊消息"}
+    {'消息内容中包含了艾特一个或多个某人，QQ号为: '+', '.join(at_list) if at_list else ''}
     {replied_text_info} 
     - {user_prompt_content_for_ai} 
     """

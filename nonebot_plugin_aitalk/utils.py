@@ -223,8 +223,19 @@ def need_reply_msg(reply_json_str: str, event: GroupMessageEvent | PrivateMessag
         logger.warning(f"need_reply_msg: 发生未知错误: {e}")
         return False, None
 
+async def get_at(message: OneBotMessage) -> list[str]:
+    """
+    获取消息中的艾特用户ID列表
+    返回艾特的用户ID列表（字符串类型）
+    """
+    at_list = []
+    for segment in message:
+        if segment.type == "at":
+            uid = segment.data.get("qq")
+            if uid.isdigit():
+                at_list.append(str(uid))
+    return at_list
 
-# --- 修改后的 get_images 函数 ---
 async def get_images(
     event: GroupMessageEvent | PrivateMessageEvent, bot: Bot
 ) -> list[str]:
