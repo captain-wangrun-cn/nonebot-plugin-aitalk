@@ -36,7 +36,7 @@ class TTSConfig(BaseModel):
     volume: float = Field(0.0, description="音量")
 
 
-# 新增：分群主动回复配置模型
+# 分群主动回复配置模型
 class GroupActiveReplyConfig(BaseModel):
     keywords: list[str] = Field(description="该群聊的主动回复触发关键字列表")
     probability: float = Field(
@@ -63,7 +63,18 @@ class Config(BaseModel):
         description="默认提示词文件路径 (相对于机器人运行根目录)，和默认提示词二选一，优先使用文件",
     )
 
-    # 新增：群聊专属提示词文件存放目录
+    
+    # 各类操作提示配置
+    aitalk_disable_busy_prompts: bool = Field(
+        False,
+        description="是否关闭诸如“不要着急哦！”或“你的操作太频繁了哦！”之类的提示信息",
+    )
+    aitalk_disable_banfailed_prompts: bool = Field(
+        False,
+        description="是否关闭“呀呀呀，我好像没有权限禁言别人呢……”之类的禁言或解禁失败提示信息",
+    )
+
+    # 群聊专属提示词文件存放目录
     aitalk_group_prompts_dir: str = Field(
         "./aitalk_config/group_prompts",
         description="群聊专属提示词文件存放目录 (例如: ./aitalk_config/group_prompts/12345.txt)。路径相对于机器人运行根目录。",
@@ -89,7 +100,7 @@ class Config(BaseModel):
     aitalk_tts_config: TTSConfig = Field(
         default_factory=TTSConfig, description="TTS语音合成配置"
     )
-    # 新增：消息发送延迟配置
+    # 消息发送延迟配置
     aitalk_message_send_delay_min: float = Field(
         0.2, description="发送多条消息时，每条之间的最小延迟（秒），设为0则不延迟"
     )
@@ -122,11 +133,6 @@ class Config(BaseModel):
     aitalk_group_active_reply_configs: Dict[str, GroupActiveReplyConfig] = Field(
         default_factory=dict,
         description='分群独立主动回复配置。键为群号字符串，值为该群的特定配置。例如：\'{"12345": {"keywords": ["help", "support"], "probability": 0.8, "no_keyword_probability": 0.2}}\'',
-    )
-    # 是否禁用“忙碌/频繁操作”提示
-    aitalk_disable_busy_prompts: bool = Field(
-        False,
-        description="是否关闭诸如“不要着急哦！”或“你的操作太频繁了哦！”之类的提示信息",
     )
     aitalk_proxy: str = Field(
         None,
@@ -172,4 +178,5 @@ active_reply_max_unrelated_followups = (
 group_active_reply_configs = plugin_config.aitalk_group_active_reply_configs
 # 加载是否禁用“忙碌/频繁操作”提示的配置项
 disable_busy_prompts = plugin_config.aitalk_disable_busy_prompts
+disable_banfailed_prompts = plugin_config.aitalk_disable_banfailed_prompts
 proxy = plugin_config.aitalk_proxy

@@ -193,7 +193,7 @@ _✨ 简单好用的 AI 聊天插件 ✨_
 |        aitalk_active_reply_keywords        | list[str] |  否  |   []   |              主动回复的触发关键字列表, 例如 '["问题", "请问", "大佬"]'               |
 |      aitalk_active_reply_probability       |   float   |  否  |  0.3   |                    满足关键字后，触发主动回复的概率 (0.0 到 1.0)                     |
 | aitalk_active_reply_no_keyword_probability |   float   |  否  |  0.05  |          未满足关键字时，触发主动回复的概率 (0.0 到 1.0)，建议设置较低的值           |
-| aitalk_proxy                               |   str     |  否  |  None  |          为模型使用的代理,例如"http://127.0.0.1:7897"          |
+|                aitalk_proxy                |    str    |  否  |  None  |                     为模型使用的代理,例如"http://127.0.0.1:7897"                     |
 
 <details>
 <summary>aitalk_completion_config（生成配置）格式</summary>
@@ -320,19 +320,18 @@ aitalk_disable_busy_prompts = Ture
 
 ## 📃 更新日志
 
+### 3.13.34（2025.10.27）
+
+- 🐛 修复 bot 是群主时的禁言/解禁问题[#23](https://github.com/captain-wangrun-cn/nonebot-plugin-aitalk/issues/23)
+- 🆕 允许自定义关闭禁言/解禁失败提示
+
 ### 3.13.33（2025.10.27）
 
-- 🆕 允许自定义模型的代理[#22](ghttps://github.com/captain-wangrun-cn/nonebot-plugin-aitalk/pull/22)
+- 🆕 允许自定义模型的代理[#22](https://github.com/captain-wangrun-cn/nonebot-plugin-aitalk/pull/22)
 
 ### 3.12.33（2025.10.23）
 
 - 🆕 添加解除禁言功能[#21](https://github.com/captain-wangrun-cn/nonebot-plugin-aitalk/issues/21)
-
-### 3.11.33（2025.08.15）
-
-- 🐛 移除无用依赖
-
-
 
 ### 3.11.28（2025.05.25）
 
@@ -340,6 +339,11 @@ aitalk_disable_busy_prompts = Ture
 
 <details>
 <summary>之前更新</summary>
+
+### 3.11.33（2025.08.15）
+
+- 🐛 移除无用依赖
+
 ### 3.11.32（2025.06.17）
 
 - 🐛 修复了语音配置报错问题
@@ -347,7 +351,7 @@ aitalk_disable_busy_prompts = Ture
 ### 3.11.31（2025.06.11）
 
 - 🐛 修复了起始符配置项不生效的问题[#20](https://github.com/captain-wangrun-cn/nonebot-plugin-aitalk/issues/20)
-  
+
 ### 3.11.30（2025.06.10）
 
 - 🐛 删除无用依赖

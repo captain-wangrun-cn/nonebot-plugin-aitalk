@@ -19,6 +19,7 @@ import pysilk
 import asyncio
 
 from .config import (
+    disable_banfailed_prompts,
     reply_when_meme,
     reply_msg,
     tts_config,
@@ -126,29 +127,29 @@ async def send_formatted_reply(
         elif isinstance(msg_segment, BanUser):
             if isinstance(event, GroupMessageEvent):
                 try:
-                    member_info = await bot.get_group_member_info(
+                    bot_member_info = await bot.get_group_member_info(
                         group_id=msg_segment.gid, user_id=bot.self_id, no_cache=True
                     )
-                    if member_info["role"] not in ["admin", "owner"]:
-                        await bot.send(
-                            event,
-                            "呀呀呀，我好像没有权限禁言别人呢……" if msg_segment.duration else "呀呀呀，我好像没有权限解禁别人呢……",
-                            **current_reply_params,
-                        )
-                        continue  # 使用 continue 跳过当前循环
+                    if bot_member_info["role"] not in ["admin", "owner"]:
+                        if not disable_banfailed_prompts:
+                            await bot.send(
+                                event,
+                                "呀呀呀，我好像没有权限禁言别人呢……" if msg_segment.duration else "呀呀呀，我好像没有权限解禁别人呢……",
+                                **current_reply_params,
+                            )
+                        continue
 
                     sender_info = await bot.get_group_member_info(
                         group_id=msg_segment.gid, user_id=msg_segment.uid, no_cache=True
                     )
-                    if sender_info["role"] in [
-                        "admin",
-                        "owner",
-                    ]:  # 不能禁言管理员或群主
-                        await bot.send(
-                            event,
-                            "呀呀呀，这个人我可不敢禁言……" if msg_segment.duration else "呀呀呀，这个人我可解禁不了……",
-                            **current_reply_params,
-                        )
+                    if bot_member_info["role"] == "admin" and sender_info["role"] == "owner":
+                        # 管理员操作群主，不能操作
+                        if not disable_banfailed_prompts:
+                            await bot.send(
+                                event,
+                                "呀呀呀，这个人我可不敢禁言……" if msg_segment.duration else "呀呀呀，这个人我可解禁不了……",
+                                **current_reply_params,
+                            )
                         continue
 
                     await bot.set_group_ban(
@@ -172,9 +173,10 @@ async def send_formatted_reply(
 
                 except Exception as e:
                     logger.error(f"禁言/解禁用户失败: {e}")
-                    await bot.send(
-                        event, "呀呀呀，禁言/解禁好像失败了呢……", **current_reply_params
-                    )
+                    if not disable_banfailed_prompts:
+                        await bot.send(
+                            event, "呀呀呀，禁言/解禁好像失败了呢……", **current_reply_params
+                        )
             else:  # 私聊不能禁言
                 pass
         elif isinstance(msg_segment, TTSMessage):
