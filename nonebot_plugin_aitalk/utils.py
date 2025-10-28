@@ -229,11 +229,9 @@ async def get_at(message: OneBotMessage) -> list[str]:
     返回艾特的用户ID列表（字符串类型）
     """
     at_list = []
-    for segment in message:
-        if segment.type == "at":
-            uid = segment.data.get("qq")
-            if uid.isdigit():
-                at_list.append(str(uid))
+    if message.has("at"):
+        for at in message.get("at"):
+            at_list.append(str(at.data.get("qq")))
     return at_list
 
 async def get_images(
