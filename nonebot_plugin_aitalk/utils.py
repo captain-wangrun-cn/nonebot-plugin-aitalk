@@ -223,7 +223,7 @@ def need_reply_msg(reply_json_str: str, event: GroupMessageEvent | PrivateMessag
         logger.warning(f"need_reply_msg: 发生未知错误: {e}")
         return False, None
 
-async def get_at(message: OneBotMessage) -> list[str]:
+def get_at(message: OneBotMessage) -> list[str]:
     """
     获取消息中的艾特用户ID列表
     返回艾特的用户ID列表（字符串类型）
