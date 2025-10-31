@@ -1205,7 +1205,7 @@ async def common_chat_handler(
 
     # 最终的用户提示文本
     user_prompt_text = f"""{user_prompt_prefix}
-    - 用户昵称：{event.sender.nickname}
+    - 用户昵称：{event.sender.card if isinstance(event, GroupMessageEvent) and event.sender.card else event.sender.nickname}
     - 用户QQ号: {event.user_id}
     - 消息时间：{time.strftime("%Y-%m-%d %H:%M:%S",time.localtime(event.time))}
     - 消息id: {str(event.message_id)}
