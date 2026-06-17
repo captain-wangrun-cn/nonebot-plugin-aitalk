@@ -306,9 +306,17 @@ async def format_reply(
             for meme_item in memes:
                 if meme_item["url"] == msg_dict.get("url"):
                     url = meme_item["url"]
-                    if not url.startswith(("http://", "https://")):
-                        url = f"file:///{os.path.abspath(url.replace(os.sep, '/'))}"  # 修正路径处理
-                    return MessageSegment.image(url)
+                    if url.startswith(("http://", "https://")):
+                        return MessageSegment.image(url)
+                    # 本地文件读取为 bytes，避免远程 OneBot 实现（如异地部署的 NapCat）无法访问本地路径
+                    local_path = Path(url)
+                    if not local_path.is_absolute():
+                        local_path = Path(os.path.abspath(url))
+                    try:
+                        return MessageSegment.image(local_path.read_bytes())
+                    except OSError as e:
+                        logger.warning(f"读取本地表情包失败: {local_path} ({e})")
+                        return MessageSegment.text(f"[表情包加载失败]")
             return MessageSegment.text("[未知表情包 URL]")
         elif msg_type == "tts":
             # 语音合成
