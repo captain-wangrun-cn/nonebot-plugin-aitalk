@@ -769,12 +769,15 @@ async def active_reply_context_rule(
 
 
 # --- Matcher 定义 ---
-# 1. 处理 @机器人 或特定命令前缀的群聊消息 (优先级最高)
+# 1. 处理 @机器人 或特定命令前缀的群聊消息
+# 采用较大的 priority + block=False，让本插件作为"兜底"处理 @机器人 的消息：
+# 其他需要"@机器人 + 触发词"的插件（如 remake 等）可以先匹配；只有当
+# 它们都未拦截时，aitalk 才接管，避免抢占其他插件的命令。
 handler = on_message(
     rule=at_me_rule,
     permission=GROUP,
-    priority=10,
-    block=True,  # 匹配到则阻塞后续同优先级Matcher
+    priority=99,
+    block=False,
 )
 # 2. 处理私聊消息 (优先级与@机器人相同)
 handler_private = on_message(
